@@ -137,7 +137,7 @@ async function bookSession(gym) {
  * @param {string} gym
  */
 function schedule(weekday, hours, minutes, gym) {
-    const _weekday = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf((weekday + 7 - 2) % 7);
+    const _weekday = (["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(weekday) + 7 - 2) % 7;
     new CronJob(
         `0 ${minutes} ${hours} * * ${_weekday}`,
         function () {
