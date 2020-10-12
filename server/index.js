@@ -17,8 +17,8 @@ function sleep(ms) {
  */
 async function bookSession(gym) {
     const browser = await puppeteer.launch({
-      defaultViewport: null,
-      headless,
+    //   defaultViewport: null,
+    //   headless,
       executablePath: "chromium-browser",
     });
     const page = await browser.newPage();
@@ -28,7 +28,11 @@ async function bookSession(gym) {
     page.on("console", (msg) => console.log("\x1b[33mCONSOLE\x1b[0m", msg.text()));
 
     // Homepage
-    await page.goto(url);
+    await page.goto(url, {
+      waitUntil: "load",
+      // Remove the timeout
+      timeout: 0,
+    });
 
     // Go to login
     await page.waitForSelector(".c-login .c-btn");
@@ -121,6 +125,8 @@ async function bookSession(gym) {
     await sleep(10000);
 
     await browser.close();
+
+    console.log("Booking completed " + new Date());
 }
 
 // *    *    *    *    *    *
@@ -145,7 +151,7 @@ function schedule(weekday, hours, minutes, gym) {
     new CronJob(
         `0 ${minutes} ${hours} * * ${_weekday}`,
         function () {
-            console.log('Book ' + weekday + ' at ' + gym);
+            console.log("Booking " + weekday + " at " + gym + " initiated " + new Date());
             bookSession(gym)
         },
         null,
