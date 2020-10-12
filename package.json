@@ -1,0 +1,14 @@
+{
+  "name": "fitness24seven",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cron": "^1.8.2",
+    "dotenv": "^8.2.0",
+    "puppeteer": "^5.3.1"
+  }
+}
