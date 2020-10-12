@@ -151,3 +151,5 @@ function schedule(weekday, hours, minutes, gym) {
 
 schedule("wednesday", 06, 30, "Lilla Torg")
 schedule("wednesday", 18, 15, "Dalaplan")
+schedule("thursday", 18, 00, "Katrinelund")
+schedule("thursday", 19, 00, "Lilla Torg")
