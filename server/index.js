@@ -16,7 +16,11 @@ function sleep(ms) {
  * @param {string} gym
  */
 async function bookSession(gym) {
-    const browser = await puppeteer.launch({ defaultViewport: null, headless });
+    const browser = await puppeteer.launch({
+      defaultViewport: null,
+      headless,
+      executablePath: "chromium-browser",
+    });
     const page = await browser.newPage();
 
     await page.setViewport({ width: 1200, height: 2000 });
@@ -28,10 +32,10 @@ async function bookSession(gym) {
 
     // Go to login
     await page.waitForSelector(".c-login .c-btn");
-    await page.evaluate(() => document.querySelector(".c-login .c-btn").click());
-    await page.waitForSelector("#logonIdentifier");
+    await page.evaluate(() => { document.querySelector(".c-login .c-btn").click() });
 
     // Login
+    await page.waitForSelector("#logonIdentifier");
     await page.evaluate(
         (email, pass) => {
             document.getElementById("logonIdentifier").value = email;
@@ -107,10 +111,10 @@ async function bookSession(gym) {
     await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
 
     // Session Bodypump
-    await page.waitForSelector("#checkbox-BODYPUMP®-input");
-    await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
+    // await page.waitForSelector("#checkbox-BODYPUMP®-input");
+    // await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
 
-    // Book Bodypump
+    // Book
     await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
     await page.evaluate(() => document.querySelector(".c-class-card__button:not(.c-btn--cancel)").click());
 
@@ -141,6 +145,7 @@ function schedule(weekday, hours, minutes, gym) {
     new CronJob(
         `0 ${minutes} ${hours} * * ${_weekday}`,
         function () {
+            console.log('Book ' + weekday + ' at ' + gym);
             bookSession(gym)
         },
         null,
@@ -153,3 +158,5 @@ schedule("wednesday", 06, 30, "Lilla Torg")
 schedule("wednesday", 18, 15, "Dalaplan")
 schedule("thursday", 18, 00, "Katrinelund")
 schedule("thursday", 19, 00, "Lilla Torg")
+
+bookSession("Katrinelund")
