@@ -94,18 +94,18 @@ async function bookSession(gym) {
         await page.waitForSelector(filterSelector(1, 4));
         await page.evaluate(() => document.querySelector(window.filterSelector(1, 4)).click());
 
-        switch (gym.toLowerCase()) {
-            case "lilla torg":
+        switch (gym) {
+            case Gym.Lilla_Torg:
                 // Gym Malmo Lilla Torg
                 await page.waitForSelector("[id='checkbox-Malmö Lilla Torg-input']");
                 await page.evaluate(() => document.getElementById("checkbox-Malmö Lilla Torg-input").click());
                 break;
-            case "katrinelund":
+            case Gym.Katrinelund:
                 // Gym Malmö Katrinelund
                 await page.waitForSelector("[id='checkbox-Malmö Katrinelund-input']");
                 await page.evaluate(() => document.getElementById("checkbox-Malmö Katrinelund-input").click());
                 break;
-            case "dalaplan":
+            case Gym.Dalaplan:
                 // Gym Malmö Dalaplan
                 await page.waitForSelector("[id='checkbox-Malmö Dalaplan-input']");
                 await page.evaluate(() => document.getElementById("checkbox-Malmö Dalaplan-input").click());
@@ -126,7 +126,7 @@ async function bookSession(gym) {
         await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
         await page.evaluate(() => document.querySelector(".c-class-card__button:not(.c-btn--cancel)").click());
 
-        console.log("Booking completed " + new Date());
+        console.log("Booking completed " + new Date().toLocaleString());
 
         await sleep(10000);
 
@@ -154,29 +154,45 @@ async function bookSession(gym) {
 
 /**
  * Schedules a cron job that books on fitness24seven
- * @param {string} weekday
- * @param {number} hours
- * @param {number} minutes
+ * @param {number} weekday
+ * @param {string} hours
+ * @param {string} minutes
  * @param {string} gym
  */
 function schedule(weekday, hours, minutes, gym) {
-    const _weekday = (["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(weekday) + 7 - 2) % 7;
+    const day = (weekday + 7 - 2) % 7;
     new CronJob(
-        `0 ${minutes} ${hours} * * ${_weekday}`,
+        `0 ${minutes} ${hours} * * ${day}`,
         function () {
-            console.log(`Booking ${weekday} at ${gym} initiated ${new Date()}`);
+            console.log(`Performing booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`, new Date().toLocaleString());
             bookSession(gym)
         },
         null,
         true,
-        "Europe/Berlin"
+        "Europe/Stockholm"
     ).start();
 
-    const [_hours, _minutes] = [String(hours).padStart(2, "0"), String(minutes).padStart(2, "0")];
-    console.log(`Scheduling booking ${_hours}:${_minutes} for ${weekday} at ${gym}`);
+    console.log(`Scheduling booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`);
 }
 
-schedule("wednesday", 06, 30, "Lilla Torg");
-schedule("wednesday", 18, 15, "Dalaplan");
-schedule("thursday", 18, 00, "Katrinelund");
-schedule("thursday", 19, 00, "Lilla Torg");
+const Day = {
+    "Sunday": 0,
+    "Monday": 1,
+    "Tuesday": 2,
+    "Wednesday": 3,
+    "Thursday": 4,
+    "Friday": 5,
+    "Saturday": 6,
+}
+
+const Gym = {
+    "Lilla_Torg": "Lilla Torg",
+    "Dalaplan": "Dalaplan",
+    "Katrinelund": "Katrinelund"
+}
+
+schedule(Day.Wednesday, "06", "30", Gym.Lilla_Torg);
+schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
+schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
+schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
+schedule(Day.Friday, "08", "00", Gym.Dalaplan);
