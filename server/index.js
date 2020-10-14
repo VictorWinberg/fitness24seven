@@ -52,10 +52,8 @@ async function bookSession(gym) {
         );
 
         // Go to booking
-        // await page.waitForSelector(".c-info-box--cta");
-        // await page.evaluate(() => document.querySelector(".c-info-box--cta").click());
-        await page.waitForSelector(".c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
-        await page.evaluate(() => document.querySelector(".c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click());
+        await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
+        await page.evaluate(() => document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click());
         console.log(' --Booking');
 
         // Helper methods for filter selecting
