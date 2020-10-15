@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const { CronJob } = require("cron");
+const dayjs = require("dayjs");
 require("dotenv").config();
 
 const url = "https://se.fitness24seven.com/mina-sidor/oversikt/";
@@ -14,9 +15,10 @@ function sleep(ms) {
 
 /**
  * Books a session on fitness24seven
+ * @param {dayjs.Dayjs} date
  * @param {string} gym
  */
-async function bookSession(gym) {
+async function bookSession(date, gym) {
     let browser, page;
     try {
         console.log(`Booking ${gym}...`);
@@ -50,6 +52,10 @@ async function bookSession(gym) {
             process.env.USER_1_EMAIL,
             process.env.USER_1_PASSWORD
         );
+
+        const delay = date.diff(dayjs())
+        console.log(` --Sleep ${delay}ms`);
+        await sleep(delay);
 
         // Go to booking
         await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
@@ -159,11 +165,13 @@ async function bookSession(gym) {
  */
 function schedule(weekday, hours, minutes, gym) {
     const day = (weekday + 7 - 2) % 7;
+    const date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
+    const offset = date.subtract(1, 'minute');
     new CronJob(
-        `0 ${minutes} ${hours} * * ${day}`,
+        `0 ${offset.format("mm HH")} * * ${day}`,
         function () {
             console.log(`Performing booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`, new Date().toLocaleString());
-            bookSession(gym)
+            bookSession(date, gym)
         },
         null,
         true,
