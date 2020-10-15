@@ -189,7 +189,15 @@ const Gym = {
     "Katrinelund": "Katrinelund"
 }
 
+// schedule(Day.Monday, "18", "00", Gym.Katrinelund);
+// schedule(Day.Monday, "20", "00", Gym.Dalaplan);
+
 schedule(Day.Wednesday, "06", "30", Gym.Lilla_Torg);
-schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
-schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
-schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
+// schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
+
+// schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
+// schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
+
+schedule(Day.Saturday, "10", "00", Gym.Lilla_Torg);
+
+schedule(Day.Sunday, "10", "00", Gym.Lilla_Torg);
