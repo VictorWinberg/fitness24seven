@@ -166,7 +166,7 @@ async function bookSession(date, gym) {
 function schedule(weekday, hours, minutes, gym) {
     const day = (weekday + 7 - 2) % 7;
     const date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
-    const offset = date.subtract(1, 'minute');
+    const offset = date.subtract(5, 'minute');
     new CronJob(
         `0 ${offset.format("mm HH")} * * ${day}`,
         function () {
