@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const { CronJob } = require("cron");
 const dayjs = require("dayjs");
+const fetch = require("node-fetch");
 require("dotenv").config();
 
 const url = "https://se.fitness24seven.com/mina-sidor/oversikt/";
@@ -20,12 +21,13 @@ function sleep(ms) {
  */
 async function bookSession(date, gym) {
     let browser, page;
+    const day = Object.keys(Day)[date.add(2, 'day').day()];
     try {
-        console.log(`Booking ${gym}...`);
+        console.log(`Booking ${day} at ${gym} - ${new Date().toLocaleString()}...`);
         browser = await puppeteer.launch({
             defaultViewport: { width: 1200, height: 800 },
             headless,
-            executablePath: "chromium-browser",
+            // executablePath: "chromium-browser",
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         page = await browser.newPage();
@@ -114,6 +116,11 @@ async function bookSession(date, gym) {
                 await page.waitForSelector("[id='checkbox-Malmö Dalaplan-input']");
                 await page.evaluate(() => document.getElementById("checkbox-Malmö Dalaplan-input").click());
                 break;
+            case Gym.Varnhem:
+                // Gym Malmö Värnhem
+                await page.waitForSelector("[id='checkbox-Malmö Värnhem-input']");
+                await page.evaluate(() => document.getElementById("checkbox-Malmö Värnhem-input").click());
+                break;
         }
 
         // Session
@@ -131,6 +138,16 @@ async function bookSession(date, gym) {
         await page.evaluate(() => document.querySelector(".c-class-card__button:not(.c-btn--cancel)").click());
 
         console.log("Booking completed " + new Date().toLocaleString());
+        await fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + process.env.BEARER_TOKEN,
+            },
+            body: JSON.stringify({
+                "title": "Fitness24Seven",
+                "message": `Booking complete: ${day} at ${gym} - ${new Date().toLocaleString()}`
+            })
+        });
 
         await sleep(10000);
 
@@ -143,6 +160,17 @@ async function bookSession(date, gym) {
         const html = await page.evaluate(() => document.body.innerHTML)
         console.log(html.replace(/\n/g, ""));
         await browser.close();
+
+        await fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + process.env.BEARER_TOKEN,
+            },
+            body: JSON.stringify({
+                "title": "Fitness24Seven",
+                "message": `Booking failed: ${day} at ${gym} - ${new Date().toLocaleString()}`
+            })
+        });
     }
 }
 
@@ -165,13 +193,14 @@ async function bookSession(date, gym) {
  */
 function schedule(weekday, hours, minutes, gym) {
     const day = (weekday + 7 - 2) % 7;
-    const date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
+    let date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
     const offset = date.subtract(5, 'minute');
     new CronJob(
         `0 ${offset.format("mm HH")} * * ${day}`,
         function () {
+            date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
             console.log(`Performing booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`, new Date().toLocaleString());
-            bookSession(date, gym)
+            bookSession(date, gym);
         },
         null,
         true,
@@ -194,18 +223,20 @@ const Day = {
 const Gym = {
     "Lilla_Torg": "Lilla Torg",
     "Dalaplan": "Dalaplan",
-    "Katrinelund": "Katrinelund"
+    "Katrinelund": "Katrinelund",
+    "Varnhem": "Värnhem",
 }
 
-// schedule(Day.Monday, "18", "00", Gym.Katrinelund);
-// schedule(Day.Monday, "20", "00", Gym.Dalaplan);
+schedule(Day.Monday, "18", "00", Gym.Katrinelund);
+schedule(Day.Monday, "20", "00", Gym.Dalaplan);
 
 schedule(Day.Wednesday, "06", "30", Gym.Lilla_Torg);
-// schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
+schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
 
-// schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
-// schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
+schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
+schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
 
 schedule(Day.Saturday, "10", "00", Gym.Lilla_Torg);
 
 schedule(Day.Sunday, "10", "00", Gym.Lilla_Torg);
+schedule(Day.Sunday, "10", "00", Gym.Katrinelund);
