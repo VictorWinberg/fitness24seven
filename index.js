@@ -27,7 +27,7 @@ async function bookSession(date, gym) {
         browser = await puppeteer.launch({
             defaultViewport: { width: 1200, height: 800 },
             headless,
-            // executablePath: "chromium-browser",
+            executablePath: "chromium-browser",
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         page = await browser.newPage();
@@ -209,6 +209,17 @@ function schedule(weekday, hours, minutes, gym) {
 
     console.log(`Scheduling booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`);
 }
+
+fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+    method: "POST",
+    headers: {
+        Authorization: "Bearer " + process.env.BEARER_TOKEN,
+    },
+    body: JSON.stringify({
+        "title": "Fitness24Seven",
+        "message": "Booking Service is up and running!"
+    })
+});
 
 const Day = {
     "Sunday": 0,
