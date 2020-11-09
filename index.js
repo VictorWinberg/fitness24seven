@@ -238,6 +238,8 @@ const Gym = {
     "Varnhem": "Värnhem",
 }
 
+console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
+
 schedule(Day.Monday, "18", "00", Gym.Katrinelund);
 schedule(Day.Monday, "20", "00", Gym.Dalaplan);
 
