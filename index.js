@@ -214,6 +214,9 @@ function schedule(weekday, hours, minutes, usr, gym) {
     console.log(`Scheduling booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym} for ${usr}`);
 }
 
+// Keep alive
+new CronJob("0 0 1 0 *", function () { console.log("Happy New Year!"); }, null, true, "Europe/Stockholm").start();
+
 fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
     method: "POST",
     headers: {
