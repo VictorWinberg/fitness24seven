@@ -2,10 +2,12 @@ const puppeteer = require("puppeteer");
 const { CronJob } = require("cron");
 const dayjs = require("dayjs");
 const fetch = require("node-fetch");
+const atob = require("atob");
 require("dotenv").config();
 
 const url = "https://se.fitness24seven.com/mina-sidor/oversikt/";
 const headless = true;
+const offsetMinutes = 5;
 
 /** @param {number} ms */
 function sleep(ms) {
@@ -17,13 +19,14 @@ function sleep(ms) {
 /**
  * Books a session on fitness24seven
  * @param {dayjs.Dayjs} date
+ * @param {usr} gym
  * @param {string} gym
  */
-async function bookSession(date, gym) {
+async function bookSession(date, usr, gym) {
     let browser, page;
     const day = Object.keys(Day)[date.add(2, 'day').day()];
     try {
-        console.log(`Booking ${day} at ${gym} - ${new Date().toLocaleString()}...`);
+        console.log(`Booking ${day} at ${gym} for ${usr} - ${new Date().toLocaleString()}...`);
         browser = await puppeteer.launch({
             defaultViewport: { width: 1200, height: 800 },
             headless,
@@ -51,8 +54,8 @@ async function bookSession(date, gym) {
                 document.getElementById("password").value = pass;
                 document.getElementById("next").click();
             },
-            process.env.USER_1_EMAIL,
-            process.env.USER_1_PASSWORD
+            process.env[usr + "_EMAIL"],
+            atob(process.env[usr + "_PASSWORD"])
         );
 
         const delay = date.diff(dayjs())
@@ -138,7 +141,7 @@ async function bookSession(date, gym) {
         await page.evaluate(() => document.querySelector(".c-class-card__button:not(.c-btn--cancel)").click());
 
         console.log("Booking completed " + new Date().toLocaleString());
-        await fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+        await fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + process.env.BEARER_TOKEN,
@@ -189,25 +192,26 @@ async function bookSession(date, gym) {
  * @param {number} weekday
  * @param {string} hours
  * @param {string} minutes
+ * @param {string} usr
  * @param {string} gym
  */
-function schedule(weekday, hours, minutes, gym) {
+function schedule(weekday, hours, minutes, usr, gym) {
     const day = (weekday + 7 - 2) % 7;
     let date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
-    const offset = date.subtract(5, 'minute');
+    const offset = date.subtract(offsetMinutes, 'minute');
     new CronJob(
         `0 ${offset.format("mm HH")} * * ${day}`,
         function () {
             date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
-            console.log(`Performing booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`, new Date().toLocaleString());
-            bookSession(date, gym);
+            console.log(`Performing booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym} for ${usr}`, new Date().toLocaleString());
+            bookSession(date, usr, gym);
         },
         null,
         true,
         "Europe/Stockholm"
     ).start();
 
-    console.log(`Scheduling booking ${hours}:${minutes} for ${Object.keys(Day)[weekday]} at ${gym}`);
+    console.log(`Scheduling booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym} for ${usr}`);
 }
 
 fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
@@ -231,6 +235,12 @@ const Day = {
     "Saturday": 6,
 }
 
+const User = {
+    "A": "USER_1",
+    "B": "USER_2",
+    "C": "USER_3",
+}
+
 const Gym = {
     "Lilla_Torg": "Lilla Torg",
     "Dalaplan": "Dalaplan",
@@ -240,16 +250,18 @@ const Gym = {
 
 console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
 
-// schedule(Day.Monday, "18", "00", Gym.Katrinelund);
-// schedule(Day.Monday, "20", "00", Gym.Dalaplan);
+// schedule(Day.Monday, "18", "00", User.X, Gym.Katrinelund);
+// schedule(Day.Monday, "20", "00", User.X, Gym.Dalaplan);
 
-schedule(Day.Wednesday, "06", "30", Gym.Lilla_Torg);
-// schedule(Day.Wednesday, "18", "15", Gym.Dalaplan);
+// schedule(Day.Wednesday, "06", "30", User.A, Gym.Lilla_Torg);
+// schedule(Day.Wednesday, "06", "30", User.B, Gym.Lilla_Torg);
+// schedule(Day.Wednesday, "06", "30", User.C, Gym.Lilla_Torg);
+// schedule(Day.Wednesday, "18", "15", User.X, Gym.Dalaplan);
 
-// schedule(Day.Thursday, "18", "00", Gym.Katrinelund);
-// schedule(Day.Thursday, "19", "00", Gym.Lilla_Torg);
+// schedule(Day.Thursday, "18", "00", User.X, Gym.Katrinelund);
+// schedule(Day.Thursday, "19", "00", User.X, Gym.Lilla_Torg);
 
-// schedule(Day.Saturday, "10", "00", Gym.Lilla_Torg);
+// schedule(Day.Saturday, "10", "00", User.X, Gym.Lilla_Torg);
 
-// schedule(Day.Sunday, "10", "00", Gym.Lilla_Torg);
-// schedule(Day.Sunday, "10", "00", Gym.Katrinelund);
+// schedule(Day.Sunday, "10", "00", User.X, Gym.Lilla_Torg);
+// schedule(Day.Sunday, "10", "00", User.X, Gym.Katrinelund);
