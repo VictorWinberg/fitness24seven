@@ -251,20 +251,6 @@ const Gym = {
     "Varnhem": "Värnhem",
 }
 
+require('./schedule.js')(schedule, Day, User, Gym)
+
 console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
-
-// schedule(Day.Monday, "18", "00", User.X, Gym.Katrinelund);
-// schedule(Day.Monday, "20", "00", User.X, Gym.Dalaplan);
-
-// schedule(Day.Wednesday, "06", "30", User.A, Gym.Lilla_Torg);
-// schedule(Day.Wednesday, "06", "30", User.B, Gym.Lilla_Torg);
-// schedule(Day.Wednesday, "06", "30", User.C, Gym.Lilla_Torg);
-// schedule(Day.Wednesday, "18", "15", User.X, Gym.Dalaplan);
-
-// schedule(Day.Thursday, "18", "00", User.X, Gym.Katrinelund);
-// schedule(Day.Thursday, "19", "00", User.X, Gym.Lilla_Torg);
-
-// schedule(Day.Saturday, "10", "00", User.X, Gym.Lilla_Torg);
-
-// schedule(Day.Sunday, "10", "00", User.X, Gym.Lilla_Torg);
-// schedule(Day.Sunday, "10", "00", User.X, Gym.Katrinelund);
