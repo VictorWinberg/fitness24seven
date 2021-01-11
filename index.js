@@ -58,10 +58,6 @@ async function bookSession(date, usr, gym) {
             atob(process.env[usr + "_PASSWORD"])
         );
 
-        const delay = date.diff(dayjs())
-        console.log(` --Sleep ${delay}ms`);
-        await sleep(delay);
-
         // Go to booking
         await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
         await page.evaluate(() => document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click());
@@ -80,8 +76,8 @@ async function bookSession(date, usr, gym) {
         await page.evaluate(() => document.querySelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`).click());
 
         // Free spots
-        await page.waitForSelector(".c-filter-toggle__toggle-input");
-        await page.evaluate(() => document.querySelector(".c-filter-toggle__toggle-input").click());
+        // await page.waitForSelector(".c-filter-toggle__toggle-input");
+        // await page.evaluate(() => document.querySelector(".c-filter-toggle__toggle-input").click());
 
         // Country
         await page.waitForSelector(filterSelector(1, 2));
@@ -98,6 +94,10 @@ async function bookSession(date, usr, gym) {
         // City Malmo
         await page.waitForSelector("#checkbox-Malmö-input");
         await page.evaluate(() => document.getElementById("checkbox-Malmö-input").click());
+
+        const delay = date.diff(dayjs())
+        console.log(` --Sleep ${delay}ms`);
+        await sleep(delay);
 
         // Gym
         await page.waitForSelector(filterSelector(1, 4));
@@ -126,22 +126,28 @@ async function bookSession(date, usr, gym) {
                 break;
         }
 
-        // Session
-        await page.waitForSelector(filterSelector(2, 2));
-        await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
+        try {
+            // Session
+            await page.waitForSelector(filterSelector(2, 2));
+            await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
 
-        // Session Bodypump
-        await page.waitForSelector("#checkbox-BODYPUMP®-input");
-        await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
+            // Session Bodypump
+            await page.waitForSelector("#checkbox-BODYPUMP®-input");
+            await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
+        } catch (error) {
+            console.error("Unable to set checkbox BODYPUMP --> Ignored");
+        }
 
         console.log(' --Looking for available session');
 
         // Book
         await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
-        await page.evaluate(() => document.querySelector(".c-class-card__button:not(.c-btn--cancel)").click());
+        await page.evaluate(() => [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click());
+
+        await browser.close();
 
         console.log("Booking completed " + new Date().toLocaleString());
-        await fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
+        fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + process.env.BEARER_TOKEN,
@@ -152,19 +158,14 @@ async function bookSession(date, usr, gym) {
             })
         });
 
-        await sleep(10000);
-
-        await browser.close();
-
-        console.log('Browser closed');
-
     } catch (error) {
-        console.error(error);
         const html = await page.evaluate(() => document.body.innerHTML)
         console.log(html.replace(/\n/g, ""));
+        console.error(error);
+        console.error("Booking failed " + new Date().toLocaleString());
         await browser.close();
 
-        await fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+        fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + process.env.BEARER_TOKEN,
@@ -172,6 +173,17 @@ async function bookSession(date, usr, gym) {
             body: JSON.stringify({
                 "title": "Fitness24Seven",
                 "message": `Booking failed: ${day} at ${gym} - ${new Date().toLocaleString()}`
+            })
+        });
+
+        fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + process.env.BEARER_TOKEN,
+            },
+            body: JSON.stringify({
+                "title": "Fitness24Seven",
+                "message": `[${usr}] Booking failed: ${day} at ${gym} - ${new Date().toLocaleString()}`
             })
         });
     }
