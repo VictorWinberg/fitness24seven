@@ -128,12 +128,16 @@ async function bookSession(date, usr, gym) {
 
         try {
             // Session
-            await page.waitForSelector(filterSelector(2, 2));
+            await page.waitForSelector(filterSelector(2, 2), {
+                timeout: 3000
+            });
             await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
 
             // Session Bodypump
-            await page.waitForSelector("#checkbox-BODYPUMP®-input");
-            await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
+            await page.waitForSelector("#checkbox-BODYPUMP®-input", {
+                timeout: 3000
+            });
+            await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-inputz").click());
         } catch (error) {
             console.error("Unable to set checkbox BODYPUMP --> Ignored");
         }
@@ -143,6 +147,8 @@ async function bookSession(date, usr, gym) {
         // Book
         await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
         await page.evaluate(() => [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click());
+
+        await sleep(10000);
 
         await browser.close();
 
