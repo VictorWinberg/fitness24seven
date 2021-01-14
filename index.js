@@ -5,7 +5,10 @@ const fetch = require("node-fetch");
 const atob = require("atob");
 require("dotenv").config();
 
-const url = "https://se.fitness24seven.com/mina-sidor/oversikt/";
+const homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/";
+const classesUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/sv-SE/Classes";
+const bookUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/BookClass";
+const notifyUrl = "https://home.zolly.ml/api/services/notify/";
 const headless = true;
 const offsetMinutes = 5;
 
@@ -38,7 +41,7 @@ async function bookSession(date, usr, gym) {
         page.on("console", (msg) => console.log("\x1b[33mCONSOLE\x1b[0m", msg.text()));
 
         // Homepage
-        await page.goto(url);
+        await page.goto(homeUrl);
         console.log(' --Homepage');
 
         // Go to login
@@ -95,9 +98,45 @@ async function bookSession(date, usr, gym) {
         await page.waitForSelector("#checkbox-Malmö-input");
         await page.evaluate(() => document.getElementById("checkbox-Malmö-input").click());
 
+        const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
+        const auths = Object.keys(JSON.parse(storage)).filter(key => key.includes("authority")).reduce((acc, curr) => acc.concat({...JSON.parse(curr), ...JSON.parse(JSON.parse(storage)[curr])}), []);
+
+        const res = await fetch(`${classesUrl}?gymIds=${gym}`);
+        const { classes } = await res.json();
+        const session = classes.filter(({ typeId, starts }) => typeId === "bodypump" && dayjs(date.add(2, 'day')).isSame(starts)).pop();
+
         const delay = date.diff(dayjs())
-        console.log(` --Sleep ${delay}ms`);
+        console.log(` --Sleep ${delay}ms ` + new Date().toLocaleString());
         await sleep(delay);
+        console.log(' --Awake ' + new Date().toLocaleString());
+
+        if (session) {
+            console.log(' --API found session');
+            const now = new Date().toLocaleString();
+
+            auths.filter(auth => auth.scopes).forEach(auth =>
+                fetch(`${bookUrl}?classId=${session.id}`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: "Bearer " + auth.accessToken,
+                    },
+                }).then((res) => {
+                    console.log("API Booking completed " + res.status + ' ' + now);
+                    fetch(notifyUrl + process.env[usr + "_HA"], {
+                        method: "POST",
+                        headers: {
+                            Authorization: "Bearer " + process.env.BEARER_TOKEN,
+                        },
+                        body: JSON.stringify({
+                            "title": "Fitness24Seven",
+                            "message": `API Booking completed ${res.status}: ${day} at ${gym} - ${now}`
+                        })
+                    });
+                }).catch((err) => {
+                    console.error("API Booking failed" + now);
+                })
+            )
+        }
 
         // Gym
         await page.waitForSelector(filterSelector(1, 4));
@@ -126,52 +165,37 @@ async function bookSession(date, usr, gym) {
                 break;
         }
 
-        try {
-            // Session
-            await page.waitForSelector(filterSelector(2, 2), {
-                timeout: 3000
-            });
-            await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
+        // Session
+        await page.waitForSelector(filterSelector(2, 2));
+        await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
 
-            // Session Bodypump
-            await page.waitForSelector("#checkbox-BODYPUMP®-input", {
-                timeout: 3000
-            });
-            await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-inputz").click());
-        } catch (error) {
-            console.error("Unable to set checkbox BODYPUMP --> Ignored");
-        }
+        // Session Bodypump
+        await page.waitForSelector("#checkbox-BODYPUMP®-input");
+        await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
 
-        console.log(' --Looking for available session');
+        console.log(' --Looking for available session ' + new Date().toLocaleString());
 
         // Book
         await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
+        const now = new Date().toLocaleString();
         await page.evaluate(() => [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click());
 
-        await sleep(10000);
-
-        await browser.close();
-
-        console.log("Booking completed " + new Date().toLocaleString());
-        fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
+        console.log("Booking completed " + now);
+        fetch(notifyUrl + process.env[usr + "_HA"], {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + process.env.BEARER_TOKEN,
             },
             body: JSON.stringify({
                 "title": "Fitness24Seven",
-                "message": `Booking complete: ${day} at ${gym} - ${new Date().toLocaleString()}`
+                "message": `Booking complete: ${day} at ${gym} - ${now}`
             })
         });
 
-    } catch (error) {
-        const html = await page.evaluate(() => document.body.innerHTML)
-        console.log(html.replace(/\n/g, ""));
-        console.error(error);
-        console.error("Booking failed " + new Date().toLocaleString());
+        await sleep(10000);
         await browser.close();
-
-        fetch("https://home.zolly.ml/api/services/notify/" + process.env[usr + "_HA"], {
+    } catch (error) {
+        fetch(notifyUrl + process.env[usr + "_HA"], {
             method: "POST",
             headers: {
                 Authorization: "Bearer " + process.env.BEARER_TOKEN,
@@ -192,6 +216,13 @@ async function bookSession(date, usr, gym) {
                 "message": `[${usr}] Booking failed: ${day} at ${gym} - ${new Date().toLocaleString()}`
             })
         });
+
+        const html = await page.evaluate(() => document.body.innerHTML)
+        console.log(html.replace(/\n/g, ""));
+        console.error(error);
+        console.error("Booking failed " + new Date().toLocaleString());
+
+        await browser.close();
     }
 }
 
@@ -263,12 +294,16 @@ const User = {
 }
 
 const Gym = {
-    "Lilla_Torg": "Lilla Torg",
-    "Dalaplan": "Dalaplan",
-    "Katrinelund": "Katrinelund",
-    "Varnhem": "Värnhem",
+    "Lilla_Torg": "malmo-lilla-torg",
+    "Dalaplan": "malmoe-dalaplan",
+    "Katrinelund": "malmoe-katrinelund",
+    "Varnhem": "malmoe-vaernhem",
 }
+
+console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
 
 require('./schedule.js')(schedule, Day, User, Gym)
 
-console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
+// Test
+// bookSession(dayjs('2021-01-14 10:00'), User.A, Gym.Lilla_Torg);
+// schedule(Day.Saturday, "10", "35", User.A, Gym.Lilla_Torg);
