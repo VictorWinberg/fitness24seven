@@ -114,7 +114,8 @@ async function bookSession(date, usr, gym) {
             console.log(' --API found session');
             const now = new Date().toLocaleString();
 
-            auths.filter(auth => auth.scopes).forEach(auth =>
+            auths.filter(auth => auth.scopes).forEach(async auth => {
+                await sleep(10);
                 fetch(`${bookUrl}?classId=${session.id}`, {
                     method: 'POST',
                     headers: {
@@ -134,8 +135,8 @@ async function bookSession(date, usr, gym) {
                     });
                 }).catch((err) => {
                     console.error("API Booking failed" + now);
-                })
-            )
+                });
+            })
         }
 
         // Gym
@@ -305,5 +306,5 @@ console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}
 require('./schedule.js')(schedule, Day, User, Gym)
 
 // Test
-// bookSession(dayjs('2021-01-14 10:00'), User.A, Gym.Lilla_Torg);
+// bookSession(dayjs('2021-01-18 11:30'), User.A, Gym.Katrinelund);
 // schedule(Day.Saturday, "10", "35", User.A, Gym.Lilla_Torg);
