@@ -20,13 +20,58 @@ function sleep(ms) {
 }
 
 /**
+ * Books a session with fitness24seven API
+ * @param {any} session
+ * @param {any} auths
+ * @param {any} date
+ * @param {any} usr
+ * @param {any} gym
+ * @param {any} day
+ */
+async function bookSessionAPI(session, auths, date, usr, gym, day) {
+    const delay = date.diff(dayjs());
+    console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
+    await sleep(delay);
+    console.log(' --API Awake ' + new Date().toLocaleString());
+
+    const now = new Date().toLocaleString();
+
+    auths.filter(auth => auth.scopes).forEach(async auth => {
+        await sleep(100);
+        console.log(' --API booking');
+        fetch(`${bookUrl}?classId=${session.id}`, {
+            method: 'POST',
+            headers: {
+                Authorization: "Bearer " + auth.accessToken,
+            },
+        }).then(async (res) => {
+            console.log("API Booking completed " + res.status + ' ' + now);
+            console.log(await res.json());
+            fetch(notifyUrl + process.env[usr + "_HA"], {
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer " + process.env.BEARER_TOKEN,
+                },
+                body: JSON.stringify({
+                    "title": "Fitness24Seven",
+                    "message": `API Booking completed ${res.status}: ${day} at ${gym} - ${now}`
+                })
+            });
+        }).catch((err) => {
+            console.error("API Booking failed", now);
+            console.error(err);
+        });
+    })
+}
+
+/**
  * Books a session on fitness24seven
  * @param {dayjs.Dayjs} date
- * @param {usr} gym
+ * @param {any} usr
  * @param {string} gym
  */
 async function bookSession(date, usr, gym) {
-    let browser, page;
+    let browser, page, session, auths;
     const day = Object.keys(Day)[date.add(2, 'day').day()];
     try {
         console.log(`Booking ${day} at ${gym} for ${usr} - ${new Date().toLocaleString()}...`);
@@ -66,6 +111,18 @@ async function bookSession(date, usr, gym) {
         await page.evaluate(() => document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click());
         console.log(' --Booking');
 
+        const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
+        auths = Object.keys(JSON.parse(storage)).filter(key => key.includes("authority")).reduce((acc, curr) => acc.concat({...JSON.parse(curr), ...JSON.parse(JSON.parse(storage)[curr])}), []);
+
+        const res = await fetch(`${classesUrl}?gymIds=${gym}`);
+        const { classes } = await res.json();
+        session = classes.filter(({ typeId, starts }) => typeId === "bodypump" && dayjs(date.add(2, 'day')).isSame(starts)).pop();
+
+        if (session) {
+            console.log(' --API found session');
+            bookSessionAPI(session, auths, date, usr, gym, day);
+        }
+
         // Helper methods for filter selecting
         const filterSelector = (id, dd) => `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
         await page.evaluate(() => {
@@ -98,46 +155,10 @@ async function bookSession(date, usr, gym) {
         await page.waitForSelector("#checkbox-Malmö-input");
         await page.evaluate(() => document.getElementById("checkbox-Malmö-input").click());
 
-        const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
-        const auths = Object.keys(JSON.parse(storage)).filter(key => key.includes("authority")).reduce((acc, curr) => acc.concat({...JSON.parse(curr), ...JSON.parse(JSON.parse(storage)[curr])}), []);
-
-        const res = await fetch(`${classesUrl}?gymIds=${gym}`);
-        const { classes } = await res.json();
-        const session = classes.filter(({ typeId, starts }) => typeId === "bodypump" && dayjs(date.add(2, 'day')).isSame(starts)).pop();
-
-        const delay = date.diff(dayjs())
+        const delay = date.diff(dayjs());
         console.log(` --Sleep ${delay}ms ` + new Date().toLocaleString());
         await sleep(delay);
         console.log(' --Awake ' + new Date().toLocaleString());
-
-        if (session) {
-            console.log(' --API found session');
-            const now = new Date().toLocaleString();
-
-            auths.filter(auth => auth.scopes).forEach(async auth => {
-                await sleep(10);
-                fetch(`${bookUrl}?classId=${session.id}`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: "Bearer " + auth.accessToken,
-                    },
-                }).then((res) => {
-                    console.log("API Booking completed " + res.status + ' ' + now);
-                    fetch(notifyUrl + process.env[usr + "_HA"], {
-                        method: "POST",
-                        headers: {
-                            Authorization: "Bearer " + process.env.BEARER_TOKEN,
-                        },
-                        body: JSON.stringify({
-                            "title": "Fitness24Seven",
-                            "message": `API Booking completed ${res.status}: ${day} at ${gym} - ${now}`
-                        })
-                    });
-                }).catch((err) => {
-                    console.error("API Booking failed" + now);
-                });
-            })
-        }
 
         // Gym
         await page.waitForSelector(filterSelector(1, 4));
@@ -219,9 +240,9 @@ async function bookSession(date, usr, gym) {
         });
 
         const html = await page.evaluate(() => document.body.innerHTML)
-        console.log(html.replace(/\n/g, ""));
-        console.error(error);
-        console.error("Booking failed " + new Date().toLocaleString());
+        console.error(html.replace(/\n/g, ""));
+        console.log(error);
+        console.log("Booking failed " + new Date().toLocaleString());
 
         await browser.close();
     }
@@ -306,5 +327,5 @@ console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}
 require('./schedule.js')(schedule, Day, User, Gym)
 
 // Test
-// bookSession(dayjs('2021-01-18 11:30'), User.A, Gym.Katrinelund);
+// bookSession(dayjs('2021-01-21 10:00'), User.A, Gym.Lilla_Torg);
 // schedule(Day.Saturday, "10", "35", User.A, Gym.Lilla_Torg);

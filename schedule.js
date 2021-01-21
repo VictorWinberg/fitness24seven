@@ -17,4 +17,7 @@ schedule(Day.Saturday, "10", "00", User.B, Gym.Lilla_Torg);
 
 schedule(Day.Sunday, "10", "00", User.A, Gym.Lilla_Torg);
 schedule(Day.Sunday, "10", "00", User.B, Gym.Lilla_Torg);
+
+schedule(Day.Sunday, "17", "00", User.A, Gym.Katrinelund);
+schedule(Day.Sunday, "17", "00", User.B, Gym.Katrinelund);
 }
