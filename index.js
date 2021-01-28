@@ -11,6 +11,7 @@ const bookUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/B
 const notifyUrl = "https://home.zolly.ml/api/services/notify/";
 const headless = true;
 const offsetMinutes = 5;
+let sessionIds = [];
 
 /** @param {number} ms */
 function sleep(ms) {
@@ -29,15 +30,16 @@ function sleep(ms) {
  * @param {any} day
  */
 async function bookSessionAPI(session, auths, date, usr, gym, day) {
+    if (sessionIds.includes(usr + session.id)) return;
+    sessionIds.push(usr + session.id);
+
     const delay = date.diff(dayjs());
     console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
-    await sleep(delay);
-    console.log(' --API Awake ' + new Date().toLocaleString());
-
-    const now = new Date().toLocaleString();
+    await sleep(delay + 250);
+    const now = new Date().toLocaleString() + ' ' + new Date().getMilliseconds() + 'ms';
+    console.log(' --API Awake ' + now);
 
     auths.filter(auth => auth.scopes).forEach(async auth => {
-        await sleep(100);
         console.log(' --API booking');
         fetch(`${bookUrl}?classId=${session.id}`, {
             method: 'POST',
@@ -47,6 +49,7 @@ async function bookSessionAPI(session, auths, date, usr, gym, day) {
         }).then(async (res) => {
             console.log("API Booking completed " + res.status + ' ' + now);
             console.log(await res.json());
+            sessionIds.pop(usr + session.id);
             fetch(notifyUrl + process.env[usr + "_HA"], {
                 method: "POST",
                 headers: {
@@ -60,6 +63,7 @@ async function bookSessionAPI(session, auths, date, usr, gym, day) {
         }).catch((err) => {
             console.error("API Booking failed", now);
             console.error(err);
+            sessionIds.pop(usr + session.id);
         });
     })
 }
@@ -245,6 +249,12 @@ async function bookSession(date, usr, gym) {
         console.log("Booking failed " + new Date().toLocaleString());
 
         await browser.close();
+        
+        const delay = date.diff(dayjs());
+        if (delay > 0) {
+            console.log(" --Retry " + new Date().toLocaleString());
+            bookSession(date, usr, gym);
+        }
     }
 }
 
