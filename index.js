@@ -320,9 +320,9 @@ const Day = {
 }
 
 const User = {
-    "A": "USER_1",
-    "B": "USER_2",
-    "C": "USER_3",
+    "VW": "USER_VW",
+    "AO": "USER_AO",
+    "AG": "USER_AG",
 }
 
 const Gym = {
@@ -337,5 +337,5 @@ console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}
 require('./schedule.js')(schedule, Day, User, Gym)
 
 // Test
-// bookSession(dayjs('2021-01-21 10:00'), User.A, Gym.Lilla_Torg);
-// schedule(Day.Saturday, "10", "35", User.A, Gym.Lilla_Torg);
+// bookSession(dayjs('2021-01-21 10:00'), User.VW, Gym.Lilla_Torg);
+// schedule(Day.Saturday, "10", "35", User.VW, Gym.Lilla_Torg);
