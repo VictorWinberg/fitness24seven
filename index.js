@@ -35,7 +35,7 @@ async function bookSessionAPI(session, auths, date, usr, gym, day) {
 
     const delay = date.diff(dayjs());
     console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
-    await sleep(delay + 250);
+    await sleep(delay + 500);
     const now = new Date().toLocaleString() + ' ' + new Date().getMilliseconds() + 'ms';
     console.log(' --API Awake ' + now);
 
