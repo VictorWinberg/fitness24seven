@@ -243,8 +243,8 @@ async function bookSession(date, usr, gym) {
             })
         });
 
-        const html = await page.evaluate(() => document.body.innerHTML)
-        console.error(html.replace(/\n/g, ""));
+        // const html = await page.evaluate(() => document.body.innerHTML)
+        // console.error(html.replace(/\n/g, ""));
         console.log(error);
         console.log("Booking failed " + new Date().toLocaleString());
 
