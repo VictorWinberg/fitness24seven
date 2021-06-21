@@ -99,15 +99,15 @@ async function bookSession(date, usr, gym) {
         console.log(' --Login');
 
         // Login
-        await page.waitForSelector("#logonIdentifier");
+        await page.waitForSelector("#email");
         await page.evaluate(
             (email, pass) => {
-                document.getElementById("logonIdentifier").value = email;
+                document.getElementById("email").value = email;
                 document.getElementById("password").value = pass;
                 document.getElementById("next").click();
             },
             process.env[usr + "_EMAIL"],
-            atob(process.env[usr + "_PASSWORD"])
+            atob(process.env[usr + "_PASSWORD"] || "")
         );
 
         // Go to booking
