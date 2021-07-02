@@ -5,6 +5,8 @@ const fetch = require("node-fetch");
 const atob = require("atob");
 require("dotenv").config();
 
+const { Day, User, Gym, Workout } = require('./constants.js');
+
 const homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/";
 const classesUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/sv-SE/Classes";
 const bookUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/BookClass";
@@ -72,9 +74,10 @@ async function bookSessionAPI(session, auths, date, usr, gym, day) {
  * Books a session on fitness24seven
  * @param {dayjs.Dayjs} date
  * @param {any} usr
+ * @param {string} workout
  * @param {string} gym
  */
-async function bookSession(date, usr, gym) {
+async function bookSession(date, usr, workout, gym) {
     let browser, page, session, auths;
     const day = Object.keys(Day)[date.add(2, 'day').day()];
     try {
@@ -120,7 +123,7 @@ async function bookSession(date, usr, gym) {
 
         const res = await fetch(`${classesUrl}?gymIds=${gym}`);
         const { classes } = await res.json();
-        session = classes.filter(({ typeId, starts }) => typeId === "bodypump" && dayjs(date.add(2, 'day')).isSame(starts)).pop();
+        session = classes.filter(({ typeId, starts }) => typeId === workout && dayjs(date.add(2, 'day')).isSame(starts)).pop();
 
         if (session) {
             console.log(' --API found session');
@@ -191,13 +194,14 @@ async function bookSession(date, usr, gym) {
                 break;
         }
 
-        // Session
+        // Workout
         await page.waitForSelector(filterSelector(2, 2));
         await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
 
-        // Session Bodypump
-        await page.waitForSelector("#checkbox-BODYPUMP®-input");
-        await page.evaluate(() => document.getElementById("checkbox-BODYPUMP®-input").click());
+        // Workout Selection
+        const checkboxInput = `checkbox-${workout.toUpperCase()}®-input`;
+        await page.waitForSelector('#' + checkboxInput);
+        await page.evaluate((input) => document.getElementById(input).click(), checkboxInput);
 
         console.log(' --Looking for available session ' + new Date().toLocaleString());
 
@@ -253,7 +257,7 @@ async function bookSession(date, usr, gym) {
         const delay = date.diff(dayjs());
         if (delay > 0) {
             console.log(" --Retry " + new Date().toLocaleString());
-            bookSession(date, usr, gym);
+            bookSession(date, usr, workout, gym);
         }
     }
 }
@@ -274,9 +278,10 @@ async function bookSession(date, usr, gym) {
  * @param {string} hours
  * @param {string} minutes
  * @param {string} usr
+ * @param {string} workout
  * @param {string} gym
  */
-function schedule(weekday, hours, minutes, usr, gym) {
+function schedule(weekday, hours, minutes, usr, workout, gym) {
     const day = (weekday + 7 - 2) % 7;
     let date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
     const offset = date.subtract(offsetMinutes, 'minute');
@@ -285,7 +290,7 @@ function schedule(weekday, hours, minutes, usr, gym) {
         function () {
             date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
             console.log(`Performing booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym} for ${usr}`, new Date().toLocaleString());
-            bookSession(date, usr, gym);
+            bookSession(date, usr, workout, gym);
         },
         null,
         true,
@@ -309,33 +314,10 @@ fetch("https://home.zolly.ml/api/services/notify/mobile_app_mr", {
     })
 });
 
-const Day = {
-    "Sunday": 0,
-    "Monday": 1,
-    "Tuesday": 2,
-    "Wednesday": 3,
-    "Thursday": 4,
-    "Friday": 5,
-    "Saturday": 6,
-}
-
-const User = {
-    "VW": "USER_VW",
-    "AO": "USER_AO",
-    "AG": "USER_AG",
-}
-
-const Gym = {
-    "Lilla_Torg": "malmo-lilla-torg",
-    "Dalaplan": "malmoe-dalaplan",
-    "Katrinelund": "malmoe-katrinelund",
-    "Varnhem": "malmoe-vaernhem",
-}
-
 console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`)
 
-require('./schedule.js')(schedule, Day, User, Gym)
+require('./schedule.js')(schedule, Day, User, Workout, Gym)
 
 // Test
-// bookSession(dayjs('2021-01-21 10:00'), User.VW, Gym.Lilla_Torg);
-// schedule(Day.Saturday, "10", "35", User.VW, Gym.Lilla_Torg);
+// bookSession(dayjs('2021-01-21 10:00'), User.VW, Workout.Bodypump, Gym.Lilla_Torg);
+// schedule(Day.Saturday, "10", "00", User.VW, Workout.Bodypump, Gym.Lilla_Torg);
