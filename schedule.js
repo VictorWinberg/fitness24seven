@@ -6,6 +6,8 @@ module.exports = (schedule, Day, User, Workout, Gym) => {
 
   schedule(Day.Wednesday, "06", "30", User.VW, Workout.Bodypump, Gym.Lilla_Torg);
   schedule(Day.Wednesday, "06", "30", User.AO, Workout.Bodypump, Gym.Lilla_Torg);
+  schedule(Day.Wednesday, "12", "00", User.VW, Workout.Bodypump, Gym.Lilla_Torg);
+  schedule(Day.Wednesday, "12", "00", User.AO, Workout.Bodypump, Gym.Lilla_Torg);
   // schedule(Day.Wednesday, "06", "30", User.AG, Workout.Bodypump, Gym.Lilla_Torg);
 
   schedule(Day.Thursday, "12", "00", User.VW, Workout.Bodypump, Gym.Lilla_Torg);
