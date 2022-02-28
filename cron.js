@@ -74,7 +74,7 @@ module.exports = ({
                 },
                 body: JSON.stringify({
                   title: "Fitness24Seven",
-                  message: `API Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`,
+                  message: `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`,
                 }),
               });
             }
@@ -144,6 +144,7 @@ module.exports = ({
       if (session) {
         console.log(" --API found session");
         bookSessionAPI(session, auths, date, usr, gym, day);
+        return
       }
 
       // Helper methods for filter selecting
