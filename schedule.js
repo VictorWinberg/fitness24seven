@@ -8,8 +8,8 @@ module.exports = ({ schedule, Day, User, Workout, Gym }) => {
   schedule(Day.Wednesday, "06", "30", User.AO, Workout.Bodypump, Gym.Lilla_Torg);
   // schedule(Day.Wednesday, "06", "30", User.AG, Workout.Bodypump, Gym.Lilla_Torg);
 
-  schedule(Day.Thursday, "18", "20", User.VW, Workout.Box, Gym.Lilla_Torg);
-  schedule(Day.Thursday, "18", "20", User.AO, Workout.Box, Gym.Lilla_Torg);
+  // schedule(Day.Thursday, "18", "20", User.VW, Workout.Box, Gym.Lilla_Torg);
+  // schedule(Day.Thursday, "18", "20", User.AO, Workout.Box, Gym.Lilla_Torg);
   // schedule(Day.Thursday, "18", "00", User.CS, Workout.Bodystep, Gym.Dalaplan);
 
   // schedule(Day.Saturday, "12", "15", User.CS, Workout.Bodystep, Gym.Varnhem);
