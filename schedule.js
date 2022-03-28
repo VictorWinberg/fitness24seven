@@ -1,19 +1,21 @@
-module.exports = ({ schedule, Day, User, Workout, Gym }) => {
-  // schedule(Day.Monday, "18", "00", User.X, Workout.Bodypump, Gym.Katrinelund);
-  // schedule(Day.Monday, "20", "00", User.X, Workout.Bodypump, Gym.Dalaplan);
+const { User, Day, Workout, Gym } = require("./constants.js");
 
-  //schedule(Day.Tuesday, "17", "00", User.CS, Workout.Bodystep, Gym.Dalaplan);
+module.exports = ({ schedule }) => {
+  // schedule(Day.Monday, "18", "00", User.X, Workout["bodypump"], Gym["katrinelund"]);
+  // schedule(Day.Monday, "20", "00", User.X, Workout["bodypump"], Gym["dalaplan"]);
 
-  schedule(Day.Wednesday, "06", "30", User.VW, Workout.Bodypump, Gym.Lilla_Torg);
-  schedule(Day.Wednesday, "06", "30", User.AO, Workout.Bodypump, Gym.Lilla_Torg);
-  // schedule(Day.Wednesday, "06", "30", User.AG, Workout.Bodypump, Gym.Lilla_Torg);
+  //schedule(Day.Tuesday, "17", "00", User.CS, Workout["bodystep"], Gym["dalaplan"]);
 
   // schedule(Day.Thursday, "18", "20", User.VW, Workout.Box, Gym.Lilla_Torg);
   // schedule(Day.Thursday, "18", "20", User.AO, Workout.Box, Gym.Lilla_Torg);
   // schedule(Day.Thursday, "18", "00", User.CS, Workout.Bodystep, Gym.Dalaplan);
 
-  // schedule(Day.Saturday, "12", "15", User.CS, Workout.Bodystep, Gym.Varnhem);
+  // schedule(Day.Thursday, "18", "20", User.VW, Workout["box"], Gym["lilla torg"]);
+  // schedule(Day.Thursday, "18", "20", User.AO, Workout["box"], Gym["lilla torg"]);
+  // schedule(Day.Thursday, "18", "00", User.CS, Workout["bodystep"], Gym["dalaplan"]);
 
-  // schedule(Day.Sunday, "10", "00", User.X, Workout.Bodypump, Gym.Lilla_Torg);
-  // schedule(Day.Sunday, "10", "00", User.X, Workout.Bodypump, Gym.Lilla_Torg);
+  // schedule(Day.Saturday, "12", "15", User.CS, Workout["bodystep"], Gym["varnhem"]);
+
+  // schedule(Day.Sunday, "10", "00", User.X, Workout["bodypump"], Gym["lilla torg"]);
+  // schedule(Day.Sunday, "10", "00", User.X, Workout["bodypump"], Gym["lilla torg"]);
 };

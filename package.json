@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "node server"
+    "start": "node index"
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +12,7 @@
     "cron": "^1.8.2",
     "dayjs": "^1.9.3",
     "dotenv": "^8.2.0",
+    "googleapis": "^98.0.0",
     "node-fetch": "^2.6.1",
     "puppeteer": "^5.3.1"
   }

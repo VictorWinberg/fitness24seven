@@ -11,7 +11,7 @@ require("./cron")({
   testBook: {
     date: "2022-01-11 20:15",
     user: User.VW,
-    workout: Workout.Box,
-    gym: Gym.Dalaplan,
+    workout: Workout["box"],
+    gym: Gym["dalaplan"],
   },
 });

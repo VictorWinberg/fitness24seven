@@ -5,15 +5,16 @@ const fetch = require("node-fetch");
 const atob = require("atob");
 require("dotenv").config();
 
-const { Day, User, Gym, Workout } = require("./constants.js");
+const { Day, User } = require("./constants.js");
+
+let jobs = {};
 
 module.exports = ({
   homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/",
   classesUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/sv-SE/Classes",
   bookUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/BookClass",
-  notify = true,
+  notifyEnabled = true,
   notifyUrl = "https://home.zolly.ml/api/services/notify/",
-  notifyUrlAdmin = "https://home.zolly.ml/api/services/notify/mobile_app_mr",
   puppeteerOptions = {
     defaultViewport: { width: 1200, height: 800 },
     headless: true,
@@ -33,6 +34,28 @@ module.exports = ({
   }
 
   /**
+   * Notifies a user
+   * @param {string} user
+   * @param {string} message
+   */
+  function notify(user, message) {
+    if (!notifyEnabled) {
+      console.log("Notification:", message);
+      return;
+    }
+    fetch(notifyUrl + process.env[user + "_HA"], {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + process.env.BEARER_TOKEN,
+      },
+      body: JSON.stringify({
+        title: "Fitness24Seven",
+        message,
+      }),
+    });
+  }
+
+  /**
    * Books a session with fitness24seven API
    * @param {any} session
    * @param {any} auths
@@ -40,8 +63,9 @@ module.exports = ({
    * @param {any} usr
    * @param {any} gym
    * @param {any} day
+   * @param {any} callback
    */
-  async function bookSessionAPI(session, auths, date, usr, gym, day) {
+  async function bookSessionAPI(session, auths, date, usr, gym, day, callback) {
     if (sessionIds.includes(usr + session.id)) return;
     sessionIds.push(usr + session.id);
 
@@ -66,18 +90,8 @@ module.exports = ({
             console.log(await res.json());
             sessionIds.pop(usr + session.id);
 
-            if (notify) {
-              fetch(notifyUrl + process.env[usr + "_HA"], {
-                method: "POST",
-                headers: {
-                  Authorization: "Bearer " + process.env.BEARER_TOKEN,
-                },
-                body: JSON.stringify({
-                  title: "Fitness24Seven",
-                  message: `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`,
-                }),
-              });
-            }
+            notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
+            callback(true);
           })
           .catch((err) => {
             console.error("API Booking failed", now);
@@ -93,8 +107,9 @@ module.exports = ({
    * @param {any} usr
    * @param {{name: string, var: string}} workout
    * @param {{name: string, var: string}} gym
+   * @param {any} callback
    */
-  async function bookSession(date, usr, workout, gym) {
+  async function bookSession(date, usr, workout, gym, callback) {
     let browser, page, session, auths;
     const day = Object.keys(Day)[date.add(2, "day").day()];
     try {
@@ -129,7 +144,9 @@ module.exports = ({
 
       // Go to booking
       await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
-      await page.evaluate(() => document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click());
+      await page.evaluate(() =>
+        document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click()
+      );
       console.log(" --Booking");
 
       const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
@@ -139,16 +156,21 @@ module.exports = ({
 
       const res = await fetch(`${classesUrl}?gymIds=${gym.var}`);
       const { classes } = await res.json();
-      session = classes.filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts)).pop();
+      session = classes
+        .filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts))
+        .pop();
 
       if (session) {
         console.log(" --API found session");
-        bookSessionAPI(session, auths, date, usr, gym, day);
-        return
+        bookSessionAPI(session, auths, date, usr, gym, day, callback);
+        await sleep(10000);
+        await browser.close();
+        return;
       }
 
       // Helper methods for filter selecting
-      const filterSelector = (id, dd) => `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
+      const filterSelector = (id, dd) =>
+        `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
       await page.evaluate(() => {
         window.filterSelector = function (id, dd) {
           return `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
@@ -157,7 +179,9 @@ module.exports = ({
 
       // Set Weekday
       await page.waitForSelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`);
-      await page.evaluate(() => document.querySelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`).click());
+      await page.evaluate(() =>
+        document.querySelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`).click()
+      );
 
       // Free spots
       // await page.waitForSelector(".c-filter-toggle__toggle-input");
@@ -205,49 +229,20 @@ module.exports = ({
       // Book
       await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
       const now = new Date().toLocaleString();
-      await page.evaluate(() => [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click());
+      await page.evaluate(() =>
+        [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click()
+      );
 
       console.log("Booking completed " + now);
 
-      if (notify) {
-        fetch(notifyUrl + process.env[usr + "_HA"], {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + process.env.BEARER_TOKEN,
-          },
-          body: JSON.stringify({
-            title: "Fitness24Seven",
-            message: `Booking complete: ${day} at ${gym.name} - ${now}`,
-          }),
-        });
-      }
-
+      notify(process.env[usr + "_HA"], `Booking complete: ${day} at ${gym.name} - ${now}`);
+      callback(true);
       await sleep(10000);
       await browser.close();
     } catch (error) {
-      if (notify) {
-        fetch(notifyUrl + process.env[usr + "_HA"], {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + process.env.BEARER_TOKEN,
-          },
-          body: JSON.stringify({
-            title: "Fitness24Seven",
-            message: `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`,
-          }),
-        });
-
-        fetch(notifyUrlAdmin, {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + process.env.BEARER_TOKEN,
-          },
-          body: JSON.stringify({
-            title: "Fitness24Seven",
-            message: `[${usr}] Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`,
-          }),
-        });
-      }
+      notify(process.env[usr + "_HA"], `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
+      notify(User.VW, `[${usr}] Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
+      callback(false);
 
       // const html = await page.evaluate(() => document.body.innerHTML)
       // console.error(html.replace(/\n/g, ""));
@@ -276,62 +271,56 @@ module.exports = ({
 
   /**
    * Schedules a cron job that books on fitness24seven
-   * @param {number} weekday
-   * @param {string} hours
-   * @param {string} minutes
+   * @param {dayjs.Dayjs} date
    * @param {string} usr
    * @param {{name: string, var: string}} workout
    * @param {{name: string, var: string}} gym
+   * @param {any} callback
    */
-  function schedule(weekday, hours, minutes, usr, workout, gym) {
-    const day = (weekday + 7 - 2) % 7;
-    let date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
+  function schedule(date, usr, workout, gym, callback) {
     const offset = date.subtract(offsetMinutes, "minute");
-    new CronJob(
-      `0 ${offset.format("mm HH")} * * ${day}`,
+    const unique = `${date.format("ddd DD MMM YYYY HH:mm")} - ${gym.name} - ${usr}`;
+    const job = new CronJob(
+      `0 ${offset.format("mm HH")} ${date.date()} ${date.month()} *`,
       function () {
-        date = dayjs(`${dayjs().format("YYYY-MM-DD")} ${hours}:${minutes}`);
-        console.log(`Performing booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym.name} for ${usr}`, new Date().toLocaleString());
-        bookSession(date, usr, workout, gym);
+        console.log(`Performing booking: ${unique}`, new Date().toLocaleString());
+        bookSession(date, usr, workout, gym, callback);
       },
       null,
       true,
       "Europe/Stockholm"
-    ).start();
+    );
 
-    console.log(`Scheduling booking ${hours}:${minutes} on ${Object.keys(Day)[weekday]} at ${gym.name} for ${usr}`);
+    jobs[unique] = job;
+
+    job.start();
+
+    console.log(`Scheduling booking: ${unique}`);
   }
 
-  // Keep alive
+  require("./schedule.js")({ schedule });
+  require("./calendar.js")({ schedule, notify });
+
+  // Daily check
   new CronJob(
-    "0 0 1 0 *",
+    "0 3 * * *",
     function () {
-      console.log("Happy New Year!");
+      Object.values(jobs).forEach((job) => job.stop());
+      jobs = {};
+
+      require("./calendar.js")({ schedule, notify });
     },
     null,
     true,
     "Europe/Stockholm"
   ).start();
 
-  if (notify) {
-    fetch(notifyUrlAdmin, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + process.env.BEARER_TOKEN,
-      },
-      body: JSON.stringify({
-        title: "Fitness24Seven",
-        message: "Booking Service is up and running!",
-      }),
-    });
-  }
+  notify(User.VW, "Booking Service is up and running!");
 
-  console.log(`Booking Service is up and running! - ${new Date().toLocaleString()}`);
-
-  require("./schedule.js")({ schedule, Day, User, Workout, Gym });
+  console.log(`Booking Service is up and running! - ${dayjs().format("ddd DD MMM HH:mm")}`);
 
   if (testBook) {
     const { date, user, workout, gym } = testBook;
-    bookSession(dayjs(date).subtract(2, "day"), user, workout, gym);
+    bookSession(dayjs(date).subtract(2, "day"), user, workout, gym, () => {});
   }
 };
