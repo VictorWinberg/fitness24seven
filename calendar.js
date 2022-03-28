@@ -39,7 +39,7 @@ module.exports = async ({ schedule, notify }) => {
   const events = items
     .filter((evt) => evt.summary && evt.start && evt.start.dateTime)
     .filter((evt) => Object.keys(Workout).some((key) => evt.summary.toLowerCase().includes(key)))
-    .filter((evt) => dayjs().isBefore(evt.start.dateTime));
+    .filter((evt) => dayjs().add(2, "day").isBefore(evt.start.dateTime));
 
   if (events.length === 0) return console.log("No events found");
 
@@ -54,7 +54,7 @@ module.exports = async ({ schedule, notify }) => {
       return;
     }
 
-    schedule(dayjs(event.start.dateTime.toString()), User.VW, workout, gym, async (success) => {
+    schedule(dayjs(event.start.dateTime.toString()).subtract(2, "day"), User.VW, workout, gym, async (success) => {
       await updateEvent(event, summary.replace(/❌|🤖/g, "") + (success ? "💪" : "❌"));
     });
 

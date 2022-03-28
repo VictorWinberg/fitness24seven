@@ -281,7 +281,7 @@ module.exports = ({
     const offset = date.subtract(offsetMinutes, "minute");
     const unique = `${date.format("ddd DD MMM YYYY HH:mm")} - ${gym.name} - ${usr}`;
     const job = new CronJob(
-      `0 ${offset.format("mm HH")} ${date.date()} ${date.month()} *`,
+      `0 ${offset.format("m H")} ${date.date()} ${date.month()} *`,
       function () {
         console.log(`Performing booking: ${unique}`, new Date().toLocaleString());
         bookSession(date, usr, workout, gym, callback);

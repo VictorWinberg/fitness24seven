@@ -27,6 +27,7 @@ const Workout = {
     "bodystep": { var: "bodystep", name: "BODYSTEP®" },
     "bodycombat": { var: "bodycombat", name: "BODYCOMBAT®" },
     "bodyattack": { var: "bodyattack", name: "BODYATTACK®" },
+    "bodybalance": { var: "bodybalance", name: "BODYBALANCE®" },
     "box": { var: "box", name: "BOX" },
 }
 
