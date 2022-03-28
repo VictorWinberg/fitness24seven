@@ -54,8 +54,10 @@ module.exports = async ({ schedule, notify }) => {
       return;
     }
 
-    schedule(dayjs(event.start.dateTime.toString()).subtract(2, "day"), User.VW, workout, gym, async (success) => {
-      await updateEvent(event, summary.replace(/❌|🤖/g, "") + (success ? "💪" : "❌"));
+    [User.VW, User.AO].forEach((user) => {
+      schedule(dayjs(event.start.dateTime.toString()).subtract(2, "day"), user, workout, gym, async (success) => {
+        await updateEvent(event, summary.replace(/❌|🤖/g, "") + (success ? "💪" : "❌"));
+      });
     });
 
     await updateEvent(event, summary.replace(/❌|🤖/g, "") + "🤖");
