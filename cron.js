@@ -240,6 +240,15 @@ module.exports = ({
       await sleep(10000);
       await browser.close();
     } catch (error) {
+      if (browser) await browser.close();
+
+      const delay = date.diff(dayjs());
+      if (delay > 0) {
+        console.log(" --Retry " + new Date().toLocaleString());
+        bookSession(date, usr, workout, gym, callback);
+        return;
+      }
+
       notify(process.env[usr + "_HA"], `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
       notify(User.VW, `[${usr}] Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
       callback(false);
@@ -248,14 +257,6 @@ module.exports = ({
       // console.error(html.replace(/\n/g, ""));
       console.log(error);
       console.log("Booking failed " + new Date().toLocaleString());
-
-      await browser.close();
-
-      const delay = date.diff(dayjs());
-      if (delay > 0) {
-        console.log(" --Retry " + new Date().toLocaleString());
-        bookSession(date, usr, workout, gym);
-      }
     }
   }
 
@@ -298,7 +299,6 @@ module.exports = ({
     console.log(`Scheduling booking: ${unique}`);
   }
 
-  require("./schedule.js")({ schedule });
   require("./calendar.js")({ schedule, notify });
 
   // Daily check
