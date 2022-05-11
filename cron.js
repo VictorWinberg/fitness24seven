@@ -11,8 +11,8 @@ let jobs = {};
 
 module.exports = ({
   homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/",
-  classesUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/sv-SE/Classes",
-  bookUrl = "https://digitalplatform-prod-svc.azurewebsites.net/v2/Booking/BookClass",
+  classesUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/sv-SE/Classes",
+  bookUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/BookClass",
   notifyEnabled = true,
   notifyUrl = "https://home.zolly.ml/api/services/notify/",
   puppeteerOptions = {
@@ -86,19 +86,24 @@ module.exports = ({
           },
         })
           .then(async (res) => {
-            console.log("API Booking completed " + res.status + " " + now);
-            console.log(await res.json());
+            if(res.ok) {
+              console.log("API Booking completed " + res.status + " " + now);
+              notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
+            } else {
+              console.log("API Booking failed " + res.status + " " + now);
+              notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+            }
+
             sessionIds.pop(usr + session.id);
 
-            notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
-            callback(true);
+            callback(res.ok);
           })
           .catch((err) => {
-            console.error("API Booking failed", now);
+            console.error("API Booking error", now);
             console.error(err);
             sessionIds.pop(usr + session.id);
 
-            notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+            notify(process.env[usr + "_HA"], `Booking error: ${day} at ${gym.name} - ${now}`);
             callback(false);
           });
       });
