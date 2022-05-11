@@ -97,6 +97,9 @@ module.exports = ({
             console.error("API Booking failed", now);
             console.error(err);
             sessionIds.pop(usr + session.id);
+
+            notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+            callback(false);
           });
       });
   }
