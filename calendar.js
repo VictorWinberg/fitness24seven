@@ -41,7 +41,9 @@ module.exports = async ({ schedule, notify }) => {
     .filter((evt) => Object.keys(Workout).some((key) => evt.summary.toLowerCase().includes(key)))
     .filter((evt) => dayjs().add(2, "day").isBefore(evt.start.dateTime));
 
-  if (events.length === 0) return console.log("No events found");
+  if (events.length === 0) {
+    return console.log("No events found", dayjs().format("YYYY-MM-DD"));
+  }
 
   events.forEach(async (event) => {
     const { summary, location } = event;
@@ -60,6 +62,7 @@ module.exports = async ({ schedule, notify }) => {
       });
     });
 
+    console.log("Event found", summary, location, dayjs().format("YYYY-MM-DD"));
     await updateEvent(event, summary.replace(/❌|🤖/g, "") + "🤖");
   });
 };

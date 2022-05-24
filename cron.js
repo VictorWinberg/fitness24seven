@@ -74,6 +74,7 @@ module.exports = ({
     await sleep(delay + 500);
     const now = new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms";
     console.log(" --API Awake " + now);
+    console.log("   -> auths", auths)
 
     auths
       .filter((auth) => auth.scopes)
