@@ -58,14 +58,14 @@ module.exports = ({
   /**
    * Books a session with fitness24seven API
    * @param {any} session
-   * @param {any} auths
+   * @param {any} token
    * @param {any} date
    * @param {any} usr
    * @param {any} gym
    * @param {any} day
    * @param {any} callback
    */
-  async function bookSessionAPI(session, auths, date, usr, gym, day, callback) {
+  async function bookSessionAPI(session, token, date, usr, gym, day, callback) {
     if (sessionIds.includes(usr + session.id)) return;
     sessionIds.push(usr + session.id);
 
@@ -74,40 +74,38 @@ module.exports = ({
     await sleep(delay + 500);
     const now = new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms";
     console.log(" --API Awake " + now);
-    console.log("   -> auths", auths)
 
-    auths
-      .filter((auth) => auth.scopes)
-      .forEach(async (auth) => {
-        console.log(" --API booking");
-        fetch(`${bookUrl}?classId=${session.id}`, {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + auth.accessToken,
-          },
-        })
-          .then(async (res) => {
-            if(res.ok) {
-              console.log("API Booking completed " + res.status + " " + now);
-              notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
-            } else {
-              console.log("API Booking failed " + res.status + " " + now);
-              notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
-            }
-
-            sessionIds.pop(usr + session.id);
-
-            callback(res.ok);
-          })
-          .catch((err) => {
-            console.error("API Booking error", now);
-            console.error(err);
-            sessionIds.pop(usr + session.id);
-
-            notify(process.env[usr + "_HA"], `Booking error: ${day} at ${gym.name} - ${now}`);
-            callback(false);
-          });
+    console.log(" --API Booking");
+    try {
+      const res = await fetch(`${bookUrl}?classId=${session.id}`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+        },
       });
+
+      if (res.ok) {
+        console.log("API Booking completed " + res.status + " " + now);
+        notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
+      } else {
+        console.log("API Booking failed " + res.status + " " + now);
+        console.log("-->", await res.text());
+        notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+      }
+
+      sessionIds.pop(usr + session.id);
+
+      callback(res.ok);
+      return res.ok;
+    } catch (err) {
+      console.error("API Booking error", now);
+      console.error(err);
+      sessionIds.pop(usr + session.id);
+
+      notify(process.env[usr + "_HA"], `Booking error: ${day} at ${gym.name} - ${now}`);
+      callback(false);
+      return false
+    }
   }
 
   /**
@@ -119,7 +117,7 @@ module.exports = ({
    * @param {any} callback
    */
   async function bookSession(date, usr, workout, gym, callback) {
-    let browser, page, session, auths;
+    let browser, page, session, token;
     const day = Object.keys(Day)[date.add(2, "day").day()];
     try {
       console.log(`Booking ${day} at ${gym.name} for ${usr} - ${new Date().toLocaleString()}...`);
@@ -159,22 +157,20 @@ module.exports = ({
       console.log(" --Booking");
 
       const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
-      auths = Object.keys(JSON.parse(storage))
-        .filter((key) => key.includes("authority"))
-        .reduce((acc, curr) => acc.concat({ ...JSON.parse(curr), ...JSON.parse(JSON.parse(storage)[curr]) }), []);
+      token = Object.keys(JSON.parse(storage)).filter((key) => key.includes("accesstoken")).map(key => JSON.parse(JSON.parse(storage)[key]).secret).pop()
 
       const res = await fetch(`${classesUrl}?gymIds=${gym.var}`);
       const { classes } = await res.json();
-      session = classes
-        .filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts))
-        .pop();
+      session = classes.filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts)).pop();
 
-      if (session) {
+      if (session && token) {
         console.log(" --API found session");
-        bookSessionAPI(session, auths, date, usr, gym, day, callback);
-        await sleep(10000);
-        await browser.close();
-        return;
+        const booked = await bookSessionAPI(session, token, date, usr, gym, day, callback);
+        if (booked) {
+          await sleep(10000);
+          await browser.close();
+          return;
+        }
       }
 
       // Helper methods for filter selecting
