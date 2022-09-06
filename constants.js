@@ -16,10 +16,10 @@ const User = {
 }
 
 const Gym = {
-    "lilla torg": { var: "malmo-lilla-torg", name: "Malmö Lilla Torg" },
-    "dalaplan": { var: "malmoe-dalaplan", name: "Malmö Dalaplan" },
-    "katrinelund": { var: "malmoe-katrinelund", name: "Malmö Katrinelund" },
-    "värnhem": { var: "malmoe-vaernhem", name: "Malmö Värnhem" },
+    "lilla torg": { var: "malmo-lilla-torg", name: "Malmö Lilla Torg GROUP" },
+    "dalaplan": { var: "malmoe-dalaplan", name: "Malmö Dalaplan GROUP" },
+    "katrinelund": { var: "malmoe-katrinelund", name: "Malmö Katrinelund GROUP" },
+    "värnhem": { var: "malmoe-vaernhem", name: "Malmö Värnhem GROUP" },
 }
 
 const Workout = {

@@ -197,16 +197,16 @@ module.exports = ({
       await page.evaluate(() => document.querySelector(window.filterSelector(1, 2)).click());
 
       // Country Sweden
-      await page.waitForSelector("#checkbox-Sverige-input");
-      await page.evaluate(() => document.getElementById("checkbox-Sverige-input").click());
+      await page.waitForSelector("#checkbox-SWEDEN-input");
+      await page.evaluate(() => document.getElementById("checkbox-SWEDEN-input").click());
 
       // City
       await page.waitForSelector(filterSelector(1, 3));
       await page.evaluate(() => document.querySelector(window.filterSelector(1, 3)).click());
 
       // City Malmo
-      await page.waitForSelector("#checkbox-Malmö-input");
-      await page.evaluate(() => document.getElementById("checkbox-Malmö-input").click());
+      await page.waitForSelector("#checkbox-MALMÖ-input");
+      await page.evaluate(() => document.getElementById("checkbox-MALMÖ-input").click());
 
       const delay = date.diff(dayjs());
       console.log(` --Sleep ${delay}ms ` + new Date().toLocaleString());
