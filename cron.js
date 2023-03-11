@@ -197,8 +197,8 @@ module.exports = ({
       await page.evaluate(() => document.querySelector(window.filterSelector(1, 2)).click());
 
       // Country Sweden
-      await page.waitForSelector("#checkbox-SWEDEN-input");
-      await page.evaluate(() => document.getElementById("checkbox-SWEDEN-input").click());
+      await page.waitForSelector("#checkbox-Sweden-input");
+      await page.evaluate(() => document.getElementById("checkbox-Sweden-input").click());
 
       // City
       await page.waitForSelector(filterSelector(1, 3));
@@ -226,7 +226,7 @@ module.exports = ({
 
       // Workout Selection
       const checkboxInput = `checkbox-${workout.name}-input`;
-      await page.waitForSelector("#" + checkboxInput);
+      await page.waitForSelector(`[id='${checkboxInput}']`);
       await page.evaluate((input) => document.getElementById(input).click(), checkboxInput);
 
       console.log(" --Looking for available session " + new Date().toLocaleString());

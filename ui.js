@@ -9,9 +9,9 @@ require("./cron")({
   },
   notify: false,
   testBook: {
-    date: "2022-01-11 20:15",
+    date: "2023-03-13 06:30",
     user: User.VW,
-    workout: Workout["box"],
-    gym: Gym["dalaplan"],
+    workout: Workout["cycling"],
+    gym: Gym["värnhem"],
   },
 });
