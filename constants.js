@@ -29,7 +29,7 @@ const Workout = {
     "bodyattack": { var: "bodyattack", name: "BODYATTACK®" },
     "bodybalance": { var: "bodybalance", name: "BODYBALANCE®" },
     "box": { var: "box", name: "BOX" },
-    "hiit-the-cage": { var: "hiit-the-cage", name: "HIIT The Cage" }
+    "hiit the cage": { var: "hiit-the-cage", name: "HIIT The Cage" }
 }
 
 module.exports = { Day, User, Gym, Workout }
