@@ -14,7 +14,7 @@ module.exports = ({
   classesUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/sv-SE/Classes",
   bookUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/BookClass",
   notifyEnabled = true,
-  notifyUrl = "https://home.zolly.ml/api/services/notify/",
+  notifyUrl = "https://home.codies.se/api/services/notify/",
   puppeteerOptions = {
     defaultViewport: { width: 1200, height: 800 },
     headless: true,
