@@ -3,7 +3,7 @@ const dayjs = require("dayjs");
 
 const { User, Gym, Workout } = require("./constants.js");
 
-const calendarId = process.env.CALENDAR_ID;
+const { CALENDAR_ID, MR_CALENDAR_ID } = process.env;
 
 module.exports = async ({ schedule, notify }) => {
   const auth = new google.auth.GoogleAuth({
@@ -12,13 +12,30 @@ module.exports = async ({ schedule, notify }) => {
   });
   const calendar = google.calendar({ version: "v3", auth });
 
-  const { data } = await calendar.events.list({
-    calendarId,
-    timeMin: dayjs().toISOString(),
-  });
-  const { items = [] } = data;
+  async function findEvents(calendarId) {
+    const { data } = await calendar.events.list({
+      calendarId,
+      timeMin: dayjs().toISOString(),
+    });
+    const { items = [] } = data;
 
-  async function updateEvent(event, summary) {
+    const events = items
+      .filter((evt) => evt.summary && evt.start && evt.start.dateTime)
+      .filter((evt) =>
+        Object.keys(Workout).some((key) =>
+          evt.summary.toLowerCase().includes(key)
+        )
+      )
+      .filter((evt) => dayjs().add(2, "day").isBefore(evt.start.dateTime));
+
+    if (events.length === 0) {
+      console.log("No events found", dayjs().format("YYYY-MM-DD"));
+    }
+
+    return events;
+  }
+
+  async function updateEvent(calendarId, event, summary) {
     try {
       await calendar.events.update({
         calendarId,
@@ -36,33 +53,59 @@ module.exports = async ({ schedule, notify }) => {
     }
   }
 
-  const events = items
-    .filter((evt) => evt.summary && evt.start && evt.start.dateTime)
-    .filter((evt) => Object.keys(Workout).some((key) => evt.summary.toLowerCase().includes(key)))
-    .filter((evt) => dayjs().add(2, "day").isBefore(evt.start.dateTime));
-
-  if (events.length === 0) {
-    return console.log("No events found", dayjs().format("YYYY-MM-DD"));
-  }
-
-  events.forEach(async (event) => {
+  async function scheduleEvent(calendarId, event, users) {
     const { summary, location } = event;
 
-    const workout = Workout[Object.keys(Workout).find((key) => summary.toLowerCase().includes(key))];
-    const gym = Gym[Object.keys(Gym).find((key) => location.toLowerCase().includes(key))];
+    const workout =
+      Workout[
+        Object.keys(Workout).find((key) => summary.toLowerCase().includes(key))
+      ];
+    const gym =
+      Gym[Object.keys(Gym).find((key) => location.toLowerCase().includes(key))];
 
     if (!workout || !gym) {
-      await updateEvent(event, summary.replace(/❌|🤖/g, "") + "❌");
+      await updateEvent(
+        calendarId,
+        event,
+        summary.replace(/💀|❌|🤖/g, "") + "💀"
+      );
       return;
     }
 
-    [User.VW, User.AO].forEach((user) => {
-      schedule(dayjs(event.start.dateTime.toString()).subtract(2, "day"), user, workout, gym, async (success) => {
-        await updateEvent(event, summary.replace(/❌|🤖/g, "") + (success ? "💪" : "❌"));
-      });
+    users.forEach((user) => {
+      schedule(
+        dayjs(event.start.dateTime.toString()).subtract(2, "day"),
+        user,
+        workout,
+        gym,
+        async (success) => {
+          await updateEvent(
+            calendarId,
+            event,
+            summary.replace(/💀|❌|🤖/g, "") + (success ? "💪" : "❌")
+          );
+        }
+      );
     });
 
     console.log("Event found", summary, location, dayjs().format("YYYY-MM-DD"));
-    await updateEvent(event, summary.replace(/❌|🤖/g, "") + "🤖");
-  });
+    await updateEvent(
+      calendarId,
+      event,
+      summary.replace(/💀|❌|🤖/g, "") + "🤖"
+    );
+  }
+
+  const calendarMap = {
+    [CALENDAR_ID]: [User.VW, User.AO],
+    [MR_CALENDAR_ID]: [User.VW],
+  };
+
+  for (const calendarId in calendarMap) {
+    const events = await findEvents(calendarId);
+
+    events.forEach(async (event) => {
+      scheduleEvent(calendarId, event, calendarMap[calendarId]);
+    });
+  }
 };

@@ -72,7 +72,7 @@ module.exports = ({
     const delay = date.diff(dayjs());
     console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
     await sleep(delay + 500);
-    const now = new Date().toLocaleString() + " " + new Date().getMilliseconds() + "ms";
+    const now = `${new Date().toLocaleString()} ${new Date().getMilliseconds()}ms`;
     console.log(" --API Awake " + now);
 
     console.log(" --API Booking");
@@ -86,11 +86,17 @@ module.exports = ({
 
       if (res.ok) {
         console.log("API Booking completed " + res.status + " " + now);
-        notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
+        notify(
+          process.env[usr + "_HA"],
+          `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`
+        );
       } else {
         console.log("API Booking failed " + res.status + " " + now);
         console.log("-->", await res.text());
-        notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+        notify(
+          process.env[usr + "_HA"],
+          `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`
+        );
       }
 
       sessionIds.pop(usr + session.id);
@@ -102,9 +108,12 @@ module.exports = ({
       console.error(err);
       sessionIds.pop(usr + session.id);
 
-      notify(process.env[usr + "_HA"], `Booking error: ${day} at ${gym.name} - ${now}`);
+      notify(
+        process.env[usr + "_HA"],
+        `Booking error: ${day} at ${gym.name} - ${now}`
+      );
       callback(false);
-      return false
+      return false;
     }
   }
 
@@ -120,11 +129,17 @@ module.exports = ({
     let browser, page, session, token;
     const day = Object.keys(Day)[date.add(2, "day").day()];
     try {
-      console.log(`Booking ${day} at ${gym.name} for ${usr} - ${new Date().toLocaleString()}...`);
+      console.log(
+        `Booking ${day} at ${
+          gym.name
+        } for ${usr} - ${new Date().toLocaleString()}...`
+      );
       browser = await puppeteer.launch(puppeteerOptions);
       page = await browser.newPage();
 
-      page.on("console", (msg) => console.log("\x1b[33mCONSOLE\x1b[0m", msg.text()));
+      page.on("console", (msg) =>
+        console.log("\x1b[33mCONSOLE\x1b[0m", msg.text())
+      );
 
       // Homepage
       await page.goto(homeUrl);
@@ -150,22 +165,46 @@ module.exports = ({
       );
 
       // Go to booking
-      await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
+      await page.waitForSelector(
+        ".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']"
+      );
       await page.evaluate(() =>
-        document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click()
+        document
+          .querySelector(
+            ".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']"
+          )
+          .click()
       );
       console.log(" --Booking");
 
-      const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
-      token = Object.keys(JSON.parse(storage)).filter((key) => key.includes("accesstoken")).map(key => JSON.parse(JSON.parse(storage)[key]).secret).pop()
+      const storage = await page.evaluate(() =>
+        JSON.stringify(window.localStorage)
+      );
+      token = Object.keys(JSON.parse(storage))
+        .filter((key) => key.includes("accesstoken"))
+        .map((key) => JSON.parse(JSON.parse(storage)[key]).secret)
+        .pop();
 
       const res = await fetch(`${classesUrl}?gymIds=${gym.var}`);
       const { classes } = await res.json();
-      session = classes.filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts)).pop();
+      session = classes
+        .filter(
+          ({ typeId, starts }) =>
+            typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts)
+        )
+        .pop();
 
       if (session && token) {
         console.log(" --API found session");
-        const booked = await bookSessionAPI(session, token, date, usr, gym, day, callback);
+        const booked = await bookSessionAPI(
+          session,
+          token,
+          date,
+          usr,
+          gym,
+          day,
+          callback
+        );
         if (booked) {
           await sleep(10000);
           await browser.close();
@@ -183,9 +222,15 @@ module.exports = ({
       });
 
       // Set Weekday
-      await page.waitForSelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`);
+      await page.waitForSelector(
+        `.c-weekday-switcher__weekday-container:nth-child(${3})`
+      );
       await page.evaluate(() =>
-        document.querySelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`).click()
+        document
+          .querySelector(
+            `.c-weekday-switcher__weekday-container:nth-child(${3})`
+          )
+          .click()
       );
 
       // Free spots
@@ -194,19 +239,27 @@ module.exports = ({
 
       // Country
       await page.waitForSelector(filterSelector(1, 2));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 2)).click());
+      await page.evaluate(() =>
+        document.querySelector(window.filterSelector(1, 2)).click()
+      );
 
       // Country Sweden
       await page.waitForSelector("#checkbox-Sweden-input");
-      await page.evaluate(() => document.getElementById("checkbox-Sweden-input").click());
+      await page.evaluate(() =>
+        document.getElementById("checkbox-Sweden-input").click()
+      );
 
       // City
       await page.waitForSelector(filterSelector(1, 3));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 3)).click());
+      await page.evaluate(() =>
+        document.querySelector(window.filterSelector(1, 3)).click()
+      );
 
       // City Malmo
       await page.waitForSelector("#checkbox-MALMÖ-input");
-      await page.evaluate(() => document.getElementById("checkbox-MALMÖ-input").click());
+      await page.evaluate(() =>
+        document.getElementById("checkbox-MALMÖ-input").click()
+      );
 
       const delay = date.diff(dayjs());
       console.log(` --Sleep ${delay}ms ` + new Date().toLocaleString());
@@ -215,32 +268,53 @@ module.exports = ({
 
       // Gym
       await page.waitForSelector(filterSelector(1, 4));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 4)).click());
+      await page.evaluate(() =>
+        document.querySelector(window.filterSelector(1, 4)).click()
+      );
 
       await page.waitForSelector(`[id='checkbox-${gym.name}-input']`);
-      await page.evaluate((gym) => document.getElementById(`checkbox-${gym.name}-input`).click(), gym);
+      await page.evaluate(
+        (gym) => document.getElementById(`checkbox-${gym.name}-input`).click(),
+        gym
+      );
 
       // Workout
       await page.waitForSelector(filterSelector(2, 2));
-      await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
+      await page.evaluate(() =>
+        document.querySelector(window.filterSelector(2, 2)).click()
+      );
 
       // Workout Selection
       const checkboxInput = `checkbox-${workout.name}-input`;
       await page.waitForSelector(`[id='${checkboxInput}']`);
-      await page.evaluate((input) => document.getElementById(input).click(), checkboxInput);
+      await page.evaluate(
+        (input) => document.getElementById(input).click(),
+        checkboxInput
+      );
 
-      console.log(" --Looking for available session " + new Date().toLocaleString());
+      console.log(
+        " --Looking for available session " + new Date().toLocaleString()
+      );
 
       // Book
       await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
       const now = new Date().toLocaleString();
       await page.evaluate(() =>
-        [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click()
+        [
+          ...document.querySelectorAll(
+            ".c-class-card__button:not(.c-btn--cancel)"
+          ),
+        ]
+          .pop()
+          .click()
       );
 
       console.log("Booking completed " + now);
 
-      notify(process.env[usr + "_HA"], `Booking complete: ${day} at ${gym.name} - ${now}`);
+      notify(
+        process.env[usr + "_HA"],
+        `Booking complete: ${day} at ${gym.name} - ${now}`
+      );
       callback(true);
       await sleep(10000);
       await browser.close();
@@ -254,8 +328,16 @@ module.exports = ({
         return;
       }
 
-      notify(process.env[usr + "_HA"], `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
-      notify(User.VW, `[${usr}] Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
+      notify(
+        process.env[usr + "_HA"],
+        `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`
+      );
+      notify(
+        User.VW,
+        `[${usr}] Booking failed: ${day} at ${
+          gym.name
+        } - ${new Date().toLocaleString()}`
+      );
       callback(false);
 
       // const html = await page.evaluate(() => document.body.innerHTML)
@@ -285,11 +367,15 @@ module.exports = ({
    */
   function schedule(date, usr, workout, gym, callback) {
     const offset = date.subtract(offsetMinutes, "minute");
-    const unique = `${date.format("ddd DD MMM YYYY HH:mm")} - ${gym.name} - ${usr}`;
+    const datestring = date.format("ddd DD MMM YYYY HH:mm");
+    const unique = `${datestring} - ${gym.name} - ${usr}`;
     const job = new CronJob(
       `0 ${offset.format("m H")} ${date.date()} ${date.month()} *`,
       function () {
-        console.log(`Performing booking: ${unique}`, new Date().toLocaleString());
+        console.log(
+          `Performing booking: ${unique}`,
+          new Date().toLocaleString()
+        );
         bookSession(date, usr, workout, gym, callback);
       },
       null,
@@ -322,7 +408,9 @@ module.exports = ({
 
   notify(User.VW, "Booking Service is up and running!");
 
-  console.log(`Booking Service is up and running! - ${dayjs().format("ddd DD MMM HH:mm")}`);
+  console.log(
+    `Booking Service is up and running! - ${dayjs().format("ddd DD MMM HH:mm")}`
+  );
 
   if (testBook) {
     const { date, user, workout, gym } = testBook;
