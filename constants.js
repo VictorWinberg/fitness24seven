@@ -17,10 +17,7 @@ const Gym = {
   "lilla torg": { var: "malmo-lilla-torg", name: "Malmö Lilla Torg GROUP" },
   dalaplan: { var: "malmoe-dalaplan", name: "Malmö Dalaplan GROUP" },
   katrinelund: { var: "malmoe-katrinelund", name: "Malmö Katrinelund GROUP" },
-  kronprinsen: {
-    var: "malmoe-kronprinsen",
-    name: "Malmö Kronprinsen GROUP",
-  },
+  kronprinsen: { var: "malmoe-kronprinsen", name: "Malmö Kronprinsen GROUP" },
   värnhem: { var: "malmoe-vaernhem", name: "Malmö Värnhem GROUP" },
 };
 
