@@ -15,6 +15,7 @@ module.exports = async ({ schedule, notify }) => {
   async function findEvents(calendarId) {
     const { data } = await calendar.events.list({
       calendarId,
+      singleEvents: true,
       timeMin: dayjs().toISOString(),
     });
     const { items = [] } = data;
