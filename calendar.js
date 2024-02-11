@@ -17,6 +17,7 @@ module.exports = async ({ schedule, notify }) => {
       calendarId,
       singleEvents: true,
       timeMin: dayjs().toISOString(),
+      timeMax: dayjs().add(1, "week").toISOString(),
     });
     const { items = [] } = data;
 
@@ -34,15 +35,17 @@ module.exports = async ({ schedule, notify }) => {
 
   async function updateEvent(calendarId, event, summary) {
     try {
+      if (event.recurringEventId) {
+        await calendar.events.insert({
+          calendarId,
+          requestBody: { ...event, summary },
+        })
+        return;
+      }
       await calendar.events.update({
         calendarId,
         eventId: event.id.toString(),
-        requestBody: {
-          ...event,
-          start: event.start,
-          end: event.end,
-          summary: summary,
-        },
+        requestBody: { ...event, summary },
       });
     } catch (error) {
       const { message } = error;
