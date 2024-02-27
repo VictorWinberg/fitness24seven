@@ -118,7 +118,7 @@ module.exports = ({
    */
   async function bookSession(date, usr, workout, gym, callback) {
     let browser, page, session, token;
-    const day = Object.keys(Day)[date.add(2, "day").day()];
+    const day = Object.keys(Day)[date.add(4, "day").day()];
     try {
       console.log(`Booking ${day} at ${gym.name} for ${usr} - ${new Date().toLocaleString()}...`);
       browser = await puppeteer.launch(puppeteerOptions);
@@ -165,7 +165,7 @@ module.exports = ({
       const res = await fetch(`${classesUrl}?gymIds=${gym.var}`);
       const { classes } = await res.json();
       session = classes
-        .filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(2, "day")).isSame(starts))
+        .filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(4, "day")).isSame(starts))
         .pop();
 
       if (session && token) {
@@ -332,6 +332,6 @@ module.exports = ({
 
   if (testBook) {
     const { date, user, workout, gym } = testBook;
-    bookSession(dayjs(date).subtract(2, "day"), user, workout, gym, () => {});
+    bookSession(dayjs(date).subtract(4, "day"), user, workout, gym, () => {});
   }
 };

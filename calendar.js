@@ -24,7 +24,7 @@ module.exports = async ({ schedule, notify }) => {
     const events = items
       .filter((evt) => evt.summary && evt.start && evt.start.dateTime)
       .filter((evt) => Object.keys(Workout).some((key) => evt.summary.toLowerCase().includes(key)))
-      .filter((evt) => dayjs().add(2, "day").isBefore(evt.start.dateTime));
+      .filter((evt) => dayjs().add(4, "day").isBefore(evt.start.dateTime));
 
     if (events.length === 0) {
       console.log("No events found", calendarId, dayjs().format("YYYY-MM-DD"));
@@ -39,7 +39,7 @@ module.exports = async ({ schedule, notify }) => {
         await calendar.events.insert({
           calendarId,
           requestBody: { ...event, summary },
-        })
+        });
         return;
       }
       await calendar.events.update({
@@ -65,7 +65,7 @@ module.exports = async ({ schedule, notify }) => {
     }
 
     users.forEach((user) => {
-      schedule(dayjs(event.start.dateTime.toString()).subtract(2, "day"), user, workout, gym, async (success) => {
+      schedule(dayjs(event.start.dateTime.toString()).subtract(4, "day"), user, workout, gym, async (success) => {
         await updateEvent(calendarId, event, summary.replace(/💀|❌|🤖/g, "") + (success ? "💪" : "❌"));
       });
     });
