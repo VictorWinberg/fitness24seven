@@ -1,7 +1,7 @@
 const { google } = require("googleapis");
 const dayjs = require("dayjs");
 
-const { User, Gym, Workout } = require("./constants.js");
+const { User, Gyms, Workouts } = require("./constants.js");
 
 const { CALENDAR_ID, MR_CALENDAR_ID } = process.env;
 
@@ -23,7 +23,7 @@ module.exports = async ({ schedule, notify }) => {
 
     const events = items
       .filter((evt) => evt.summary && evt.start && evt.start.dateTime)
-      .filter((evt) => Object.keys(Workout).some((key) => evt.summary.toLowerCase().includes(key)))
+      .filter((evt) => Workouts.some((workout) => evt.summary.toLowerCase().includes(workout.key)))
       .filter((evt) => dayjs().add(4, "day").isBefore(evt.start.dateTime));
 
     if (events.length === 0) {
@@ -56,8 +56,8 @@ module.exports = async ({ schedule, notify }) => {
   async function scheduleEvent(calendarId, event, users) {
     const { summary, location } = event;
 
-    const workout = Workout[Object.keys(Workout).find((key) => summary.toLowerCase().includes(key))];
-    const gym = Gym[Object.keys(Gym).find((key) => location.toLowerCase().includes(key))];
+    const workout = Workouts.find((workout) => summary.toLowerCase().includes(workout.key));
+    const gym = Gyms.find((gym) => location.toLowerCase().includes(gym.key));
 
     if (!workout || !gym) {
       await updateEvent(calendarId, event, summary.replace(/💀|❌|🤖/g, "") + "💀");
