@@ -13,23 +13,34 @@ const User = {
   AO: "USER_AO",
 };
 
-const Gym = {
-  "lilla torg": { var: "malmo-lilla-torg", name: "Malmö Lilla Torg GROUP" },
-  dalaplan: { var: "malmoe-dalaplan", name: "Malmö Dalaplan GROUP" },
-  katrinelund: { var: "malmoe-katrinelund", name: "Malmö Katrinelund GROUP" },
-  kronprinsen: { var: "malmoe-kronprinsen", name: "Malmö Kronprinsen GROUP" },
-  värnhem: { var: "malmoe-vaernhem", name: "Malmö Värnhem GROUP" },
-};
+const Gyms = [
+  { id: 28, name: "Göteborg Kungsgatan GROUP", key: "kungsgatan" },
+  { id: 121, name: "Göteborg Olskroken GROUP", key: "olskroken" },
+  { id: 105, name: "Göteborg Ullevi GROUP", key: "ullevi" },
+  { id: 2, name: "Helsingborg Kullagatan GROUP", key: "kullagatan" },
+  { id: 5, name: "Lund Centrum GROUP", key: "lund centrum" },
+  { id: 77, name: "Malmö Dalaplan GROUP", key: "dalaplan" },
+  { id: 56, name: "Malmö Katrinelund GROUP", key: "katrinelund" },
+  { id: 260, name: "Malmö Kronprinsen GROUP", key: "kronprinsen" },
+  { id: 119, name: "Malmö Lilla Torg GROUP", key: "lilla torg" },
+  { id: 162, name: "Malmö Rosengård C GROUP", key: "rosengård" },
+  { id: 21, name: "Malmö Värnhem GROUP", key: "värnhem" },
+  { id: 75, name: "Stockholm Fruängen c GROUP", key: "fruängen" },
+  { id: 76, name: "Stockholm Hötorget GROUP", key: "hötorget" },
+  { id: 234, name: "Stockholm Odenplan GROUP", key: "odenplan" },
+  { id: 88, name: "Stockholm Regeringsgatan GROUP", key: "regeringsgatan" },
+  { id: 133, name: "Stockholm Skanstull GROUP", key: "skanstull" },
+];
 
-const Workout = {
-  bodypump: { var: "bodypump", name: "BODYPUMP®" },
-  bodystep: { var: "bodystep", name: "BODYSTEP®" },
-  bodycombat: { var: "bodycombat", name: "BODYCOMBAT®" },
-  bodyattack: { var: "bodyattack", name: "BODYATTACK®" },
-  bodybalance: { var: "bodybalance", name: "BODYBALANCE®" },
-  box: { var: "box", name: "BOX" },
-  "hiit the cage": { var: "hiit-the-cage", name: "HIIT THE CAGE" },
-  "hiit the zone": { var: "hiit-the-zone", name: "HIIT THE ZONE" },
-};
+const Workouts = [
+  { name: "BODYPUMP®", key: "bodypump" },
+  { name: "BODYSTEP®", key: "bodystep" },
+  { name: "BODYCOMBAT®", key: "bodycombat" },
+  { name: "BODYATTACK®", key: "bodyattack" },
+  { name: "BODYBALANCE®", key: "bodybalance" },
+  { name: "BOX", key: "box" },
+  { name: "HIIT THE CAGE", key: "hiit the cage" },
+  { name: "HIIT THE ZONE", key: "hiit the zone" },
+];
 
-module.exports = { Day, User, Gym, Workout };
+module.exports = { Day, User, Gyms, Workouts };

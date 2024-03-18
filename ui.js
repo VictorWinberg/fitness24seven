@@ -1,4 +1,4 @@
-const { User, Gym, Workout } = require("./constants.js");
+const { User, Gyms, Workouts } = require("./constants.js");
 
 require("./cron")({
   puppeteerOptions: {
@@ -7,11 +7,11 @@ require("./cron")({
     executablePath: "",
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
-  notify: false,
+  notifyEnabled: false,
   testBook: {
-    date: "2023-03-13 06:30",
+    date: "2024-03-19 18:00",
     user: User.VW,
-    workout: Workout["cycling"],
-    gym: Gym["värnhem"],
+    workout: Workouts.find((workout) => workout.key === "hiit the cage"),
+    gym: Gyms.find((gym) => gym.key === "värnhem"),
   },
 });

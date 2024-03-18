@@ -11,8 +11,7 @@ let jobs = {};
 
 module.exports = ({
   homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/",
-  classesUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/sv-SE/Classes",
-  bookUrl = "https://digital-platform-api-prod.az.fitness24seven.com/v2/Booking/BookClass",
+  apiUrl = "https://platform.fitness24seven.com/api/v2",
   notifyEnabled = true,
   notifyUrl = "https://home.codies.se/api/services/notify/",
   puppeteerOptions = {
@@ -24,7 +23,7 @@ module.exports = ({
   testBook = null,
   offsetMinutes = 5,
 }) => {
-  let sessionIds = [];
+  let bookingIds = [];
 
   /** @param {number} ms */
   function sleep(ms) {
@@ -56,19 +55,20 @@ module.exports = ({
   }
 
   /**
-   * Books a session with fitness24seven API
-   * @param {any} session
-   * @param {any} token
-   * @param {any} date
-   * @param {any} usr
-   * @param {any} gym
-   * @param {any} day
+   * Books a timeslot with fitness24seven API
+   * @param {{id: string}} timeslot
+   * @param {string} token
+   * @param {dayjs.Dayjs} date
+   * @param {string} usr
+   * @param {{name: string}} gym
+   * @param {string} day
    * @param {any} callback
    */
-  async function bookSessionAPI(session, token, date, usr, gym, day, callback) {
-    if (sessionIds.includes(usr + session.id)) return;
-    sessionIds.push(usr + session.id);
+  async function bookTimeslotAPI(timeslot, token, date, usr, gym, day, callback) {
+    if (bookingIds.includes(usr + timeslot.id)) return;
+    bookingIds.push(usr + timeslot.id);
 
+    const api = require("./api.js")({ apiUrl, token });
     const delay = date.diff(dayjs());
     console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
     await sleep(delay + 500);
@@ -77,32 +77,26 @@ module.exports = ({
 
     console.log(" --API Booking");
     try {
-      const res = await fetch(`${bookUrl}?classId=${session.id}`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+      const booking = await api.createNewBooking(timeslot.id);
 
-      if (res.ok) {
-        console.log("API Booking completed " + res.status + " " + now);
-        notify(process.env[usr + "_HA"], `Booking completed ${res.status}: ${day} at ${gym.name} - ${now}`);
+      if (booking.isSuccessful) {
+        console.log("API Booking successful " + now);
+        // notify(usr, `Booking successful: ${day} at ${gym.name} - ${now}`);
       } else {
-        console.log("API Booking failed " + res.status + " " + now);
-        console.log("-->", await res.text());
-        notify(process.env[usr + "_HA"], `Booking failed ${res.status}: ${day} at ${gym.name} - ${now}`);
+        console.log("API Booking failed " + booking.errorCode + " " + now);
+        notify(usr, `Booking failed ${booking.errorCode}: ${day} at ${gym.name} - ${now}`);
       }
 
-      sessionIds.pop(usr + session.id);
+      bookingIds.pop(usr + timeslot.id);
 
-      callback(res.ok);
-      return res.ok;
+      callback(booking.isSuccessful);
+      return booking.isSuccessful;
     } catch (err) {
       console.error("API Booking error", now);
       console.error(err);
-      sessionIds.pop(usr + session.id);
+      bookingIds.pop(usr + timeslot.id);
 
-      notify(process.env[usr + "_HA"], `Booking error: ${day} at ${gym.name} - ${now}`);
+      notify(usr, `Booking error: ${day} at ${gym.name} - ${now}`);
       callback(false);
       return false;
     }
@@ -111,13 +105,13 @@ module.exports = ({
   /**
    * Books a session on fitness24seven
    * @param {dayjs.Dayjs} date
-   * @param {any} usr
-   * @param {{name: string, var: string}} workout
-   * @param {{name: string, var: string}} gym
+   * @param {string} usr
+   * @param {{name: string}} workout
+   * @param {{id: string, name: string}} gym
    * @param {any} callback
    */
   async function bookSession(date, usr, workout, gym, callback) {
-    let browser, page, session, token;
+    let browser, page, token;
     const day = Object.keys(Day)[date.add(4, "day").day()];
     try {
       console.log(`Booking ${day} at ${gym.name} for ${usr} - ${new Date().toLocaleString()}...`);
@@ -149,12 +143,8 @@ module.exports = ({
         atob(process.env[usr + "_PASSWORD"] || "")
       );
 
-      // Go to booking
-      await page.waitForSelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']");
-      await page.evaluate(() =>
-        document.querySelector(".c-info-box--cta, .c-arrow-cta__link[href='/mina-sidor/boka-grupptraning/']").click()
-      );
-      console.log(" --Booking");
+      await page.waitForFunction('window.localStorage.isLoggedin === "true"');
+      console.log(" --Logged in");
 
       const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
       token = Object.keys(JSON.parse(storage))
@@ -162,94 +152,41 @@ module.exports = ({
         .map((key) => JSON.parse(JSON.parse(storage)[key]).secret)
         .pop();
 
-      const res = await fetch(`${classesUrl}?gymIds=${gym.var}`);
-      const { classes } = await res.json();
-      session = classes
-        .filter(({ typeId, starts }) => typeId === workout.var && dayjs(date.add(4, "day")).isSame(starts))
+      // e.g. info.idTokenClaims.extension_PersonId
+      info = Object.values(JSON.parse(storage))
+        .filter((value) => value.includes("idTokenClaims"))
+        .map(JSON.parse)
         .pop();
 
-      if (session && token) {
-        console.log(" --API found session");
-        const booked = await bookSessionAPI(session, token, date, usr, gym, day, callback);
-        if (booked) {
-          await sleep(10000);
-          await browser.close();
-          return;
-        }
+      if (!token) {
+        console.error(" --No token found");
+        await sleep(10000);
+        await browser.close();
+        return;
       }
 
-      // Helper methods for filter selecting
-      const filterSelector = (id, dd) =>
-        `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
-      await page.evaluate(() => {
-        window.filterSelector = function (id, dd) {
-          return `.u-display-none--sm .c-class-filter:nth-child(${id}) .c-filter-dropdown:nth-child(${dd}) .c-filter-dropdown__button--clickable`;
-        };
-      });
+      const api = require("./api.js")({ apiUrl, token });
 
-      // Set Weekday
-      await page.waitForSelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`);
-      await page.evaluate(() =>
-        document.querySelector(`.c-weekday-switcher__weekday-container:nth-child(${3})`).click()
-      );
+      const timeslots = await api.getTimeSlotsNew(gym.id);
+      const timeslot = timeslots
+        .filter(({ activity }) => activity.name === workout.name)
+        .filter(({ duration }) => dayjs(date.add(4, "day")).isSame(duration.start))
+        .pop();
 
-      // Free spots
-      // await page.waitForSelector(".c-filter-toggle__toggle-input");
-      // await page.evaluate(() => document.querySelector(".c-filter-toggle__toggle-input").click());
+      if (!timeslot) {
+        console.error(" --No timeslot found");
+        await sleep(10000);
+        await browser.close();
+        return;
+      }
 
-      // Country
-      await page.waitForSelector(filterSelector(1, 2));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 2)).click());
+      console.log(" --API found session");
+      await bookTimeslotAPI(timeslot, token, date, usr, gym, day, callback);
 
-      // Country Sweden
-      await page.waitForSelector("#checkbox-Sweden-input");
-      await page.evaluate(() => document.getElementById("checkbox-Sweden-input").click());
-
-      // City
-      await page.waitForSelector(filterSelector(1, 3));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 3)).click());
-
-      // City Malmo
-      await page.waitForSelector("#checkbox-MALMÖ-input");
-      await page.evaluate(() => document.getElementById("checkbox-MALMÖ-input").click());
-
-      const delay = date.diff(dayjs());
-      console.log(` --Sleep ${delay}ms ` + new Date().toLocaleString());
-      await sleep(delay);
-      console.log(" --Awake " + new Date().toLocaleString());
-
-      // Gym
-      await page.waitForSelector(filterSelector(1, 4));
-      await page.evaluate(() => document.querySelector(window.filterSelector(1, 4)).click());
-
-      await page.waitForSelector(`[id='checkbox-${gym.name}-input']`);
-      await page.evaluate((gym) => document.getElementById(`checkbox-${gym.name}-input`).click(), gym);
-
-      // Workout
-      await page.waitForSelector(filterSelector(2, 2));
-      await page.evaluate(() => document.querySelector(window.filterSelector(2, 2)).click());
-
-      // Workout Selection
-      const checkboxInput = `checkbox-${workout.name}-input`;
-      await page.waitForSelector(`[id='${checkboxInput}']`);
-      await page.evaluate((input) => document.getElementById(input).click(), checkboxInput);
-
-      console.log(" --Looking for available session " + new Date().toLocaleString());
-
-      // Book
-      await page.waitForSelector(".c-class-card__button:not(.c-btn--cancel)");
-      const now = new Date().toLocaleString();
-      await page.evaluate(() =>
-        [...document.querySelectorAll(".c-class-card__button:not(.c-btn--cancel)")].pop().click()
-      );
-
-      console.log("Booking completed " + now);
-
-      notify(process.env[usr + "_HA"], `Booking complete: ${day} at ${gym.name} - ${now}`);
-      callback(true);
       await sleep(10000);
       await browser.close();
     } catch (error) {
+      console.log(error);
       if (browser) await browser.close();
 
       const delay = date.diff(dayjs());
@@ -259,8 +196,7 @@ module.exports = ({
         return;
       }
 
-      notify(process.env[usr + "_HA"], `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
-      notify(User.VW, `[${usr}] Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
+      notify(usr, `Booking failed: ${day} at ${gym.name} - ${new Date().toLocaleString()}`);
       callback(false);
 
       // const html = await page.evaluate(() => document.body.innerHTML)
@@ -284,8 +220,8 @@ module.exports = ({
    * Schedules a cron job that books on fitness24seven
    * @param {dayjs.Dayjs} date
    * @param {string} usr
-   * @param {{name: string, var: string}} workout
-   * @param {{name: string, var: string}} gym
+   * @param {{name: string}} workout
+   * @param {{name: string}} gym
    * @param {any} callback
    */
   function schedule(date, usr, workout, gym, callback) {
