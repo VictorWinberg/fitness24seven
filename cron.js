@@ -5,7 +5,7 @@ const fetch = require("node-fetch");
 const atob = require("atob");
 require("dotenv").config();
 
-const { Day, User } = require("./constants.js");
+const { User } = require("./constants.js");
 
 let jobs = {};
 
@@ -106,7 +106,7 @@ module.exports = ({
    */
   async function bookSession(date, usr, workout, gym, callback) {
     let browser, page, token;
-    const day = Object.keys(Day)[date.add(4, "day").day()];
+    const day = date.add(4, "day").format("dddd");
     try {
       console.log(`Booking ${day} at ${gym.name} for ${usr} - ${new Date().toLocaleString()}...`);
       browser = await puppeteer.launch(puppeteerOptions);

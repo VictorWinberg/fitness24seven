@@ -1,13 +1,3 @@
-const Day = {
-  Sunday: 0,
-  Monday: 1,
-  Tuesday: 2,
-  Wednesday: 3,
-  Thursday: 4,
-  Friday: 5,
-  Saturday: 6,
-};
-
 const User = {
   VW: "USER_VW",
   AO: "USER_AO",
@@ -44,4 +34,4 @@ const Workouts = [
   { name: "HIIT FULL BODY", key: "hiit full body" }
 ];
 
-module.exports = { Day, User, Gyms, Workouts };
+module.exports = { User, Gyms, Workouts };
