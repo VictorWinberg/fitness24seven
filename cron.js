@@ -69,12 +69,6 @@ module.exports = ({
     bookingIds.push(usr + timeslot.id);
 
     const api = require("./api.js")({ apiUrl, token });
-    const delay = date.diff(dayjs());
-    console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
-    await sleep(delay + 500);
-    const now = `${new Date().toLocaleString()} ${new Date().getMilliseconds()}ms`;
-    console.log(" --API Awake " + now);
-
     console.log(" --API Booking");
     try {
       const booking = await api.createNewBooking(timeslot.id);
@@ -165,8 +159,13 @@ module.exports = ({
         return;
       }
 
-      const api = require("./api.js")({ apiUrl, token });
+      const delay = date.diff(dayjs());
+      console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
+      await sleep(delay + 500);
+      const now = `${new Date().toLocaleString()} ${new Date().getMilliseconds()}ms`;
+      console.log(" --API Awake " + now);
 
+      const api = require("./api.js")({ apiUrl, token });
       const timeslots = await api.getTimeSlotsNew(gym.id);
       const timeslot = timeslots
         .filter(({ activity }) => activity.name === workout.name)
