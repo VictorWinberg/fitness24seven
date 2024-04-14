@@ -41,6 +41,7 @@ const Workouts = [
   { name: "BOX", key: "box" },
   { name: "HIIT THE CAGE", key: "hiit the cage" },
   { name: "HIIT THE ZONE", key: "hiit the zone" },
+  { name: "HIIT FULL BODY", key: "hiit full body" }
 ];
 
 module.exports = { Day, User, Gyms, Workouts };
