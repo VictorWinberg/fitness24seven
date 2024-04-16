@@ -23,15 +23,15 @@ const Gyms = [
 ];
 
 const Workouts = [
-  { name: "BODYPUMP®", key: "bodypump" },
-  { name: "BODYSTEP®", key: "bodystep" },
-  { name: "BODYCOMBAT®", key: "bodycombat" },
-  { name: "BODYATTACK®", key: "bodyattack" },
-  { name: "BODYBALANCE®", key: "bodybalance" },
+  { name: "BODYPUMP", key: "bodypump" },
+  { name: "BODYSTEP", key: "bodystep" },
+  { name: "BODYCOMBAT", key: "bodycombat" },
+  { name: "BODYATTACK", key: "bodyattack" },
+  { name: "BODYBALANCE", key: "bodybalance" },
   { name: "BOX", key: "box" },
   { name: "HIIT THE CAGE", key: "hiit the cage" },
   { name: "HIIT THE ZONE", key: "hiit the zone" },
-  { name: "HIIT FULL BODY", key: "hiit full body" }
+  { name: "HIIT FULL BODY", key: "hiit full body" },
 ];
 
 module.exports = { User, Gyms, Workouts };
