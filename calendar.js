@@ -1,9 +1,10 @@
 const { google } = require("googleapis");
 const dayjs = require("dayjs");
+require("dotenv").config();
 
 const { User, Gyms, Workouts } = require("./constants.js");
 
-const { CALENDAR_ID, MR_CALENDAR_ID } = process.env;
+const { CALENDAR_ID, MR_CALENDAR_ID, MS_CALENDAR_ID } = process.env;
 
 module.exports = async ({ schedule, notify }) => {
   const auth = new google.auth.GoogleAuth({
@@ -33,7 +34,7 @@ module.exports = async ({ schedule, notify }) => {
     return events;
   }
 
-  async function updateEvent(calendarId, event, summary) {
+  async function updateEvent(calendarId, event, summary, user) {
     try {
       if (event.recurringEventId) {
         await calendar.events.insert({
@@ -48,8 +49,15 @@ module.exports = async ({ schedule, notify }) => {
         requestBody: { ...event, summary },
       });
     } catch (error) {
-      const { message } = error;
-      notify(User.VW, message);
+      // Forbidden fallback - notify user
+      if (error.code === 403) {
+        if (!user) return;
+
+        notify(user, `${summary} (${event.location})`);
+        return;
+      }
+
+      notify(user || User.VW, error.message);
     }
   }
 
@@ -66,7 +74,7 @@ module.exports = async ({ schedule, notify }) => {
 
     users.forEach((user) => {
       schedule(dayjs(event.start.dateTime.toString()).subtract(4, "day"), user, workout, gym, async (success) => {
-        await updateEvent(calendarId, event, summary.replace(/💀|❌|🤖/g, "") + (success ? "💪" : "❌"));
+        await updateEvent(calendarId, event, summary.replace(/💀|❌|🤖/g, "") + (success ? "💪" : "❌"), user);
       });
     });
 
@@ -77,6 +85,7 @@ module.exports = async ({ schedule, notify }) => {
   const calendarMap = {
     [CALENDAR_ID]: [User.VW, User.AO],
     [MR_CALENDAR_ID]: [User.VW],
+    [MS_CALENDAR_ID]: [User.AO],
   };
 
   for (const calendarId in calendarMap) {

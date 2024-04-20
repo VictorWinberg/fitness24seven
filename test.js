@@ -15,3 +15,7 @@ require("./cron.js")({
     gym: Gyms.find((gym) => gym.key === "värnhem"),
   },
 });
+
+// require("./calendar.js")({
+//   notify: console.log,
+// });

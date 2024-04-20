@@ -15,7 +15,7 @@ const Gyms = [
   { id: 119, name: "Malmö Lilla Torg GROUP", key: "lilla torg" },
   { id: 162, name: "Malmö Rosengård C GROUP", key: "rosengård" },
   { id: 21, name: "Malmö Värnhem GROUP", key: "värnhem" },
-  { id: 75, name: "Stockholm Fruängen c GROUP", key: "fruängen" },
+  { id: 75, name: "Stockholm Fruängen C GROUP", key: "fruängen" },
   { id: 76, name: "Stockholm Hötorget GROUP", key: "hötorget" },
   { id: 234, name: "Stockholm Odenplan GROUP", key: "odenplan" },
   { id: 88, name: "Stockholm Regeringsgatan GROUP", key: "regeringsgatan" },
@@ -32,6 +32,7 @@ const Workouts = [
   { name: "HIIT THE CAGE", key: "hiit the cage" },
   { name: "HIIT THE ZONE", key: "hiit the zone" },
   { name: "HIIT FULL BODY", key: "hiit full body" },
+  { name: "Run Interval", key: "run interval" },
 ];
 
 module.exports = { User, Gyms, Workouts };
