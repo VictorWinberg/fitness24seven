@@ -58,13 +58,12 @@ module.exports = ({
    * Books a timeslot with fitness24seven API
    * @param {{id: string}} timeslot
    * @param {string} token
-   * @param {dayjs.Dayjs} date
    * @param {string} usr
    * @param {{name: string}} gym
    * @param {string} day
    * @param {any} callback
    */
-  async function bookTimeslotAPI(timeslot, token, date, usr, gym, day, callback) {
+  async function bookTimeslotAPI(timeslot, token, usr, gym, day, callback) {
     if (bookingIds.includes(usr + timeslot.id)) return;
     bookingIds.push(usr + timeslot.id);
 
@@ -72,6 +71,7 @@ module.exports = ({
     console.log(" --API Booking");
     try {
       const booking = await api.createNewBooking(timeslot.id);
+      const now = `${new Date().toLocaleString()} ${new Date().getMilliseconds()}ms`;
 
       if (booking.isSuccessful) {
         console.log("API Booking successful " + now);
@@ -180,7 +180,7 @@ module.exports = ({
       }
 
       console.log(" --API found session");
-      await bookTimeslotAPI(timeslot, token, date, usr, gym, day, callback);
+      await bookTimeslotAPI(timeslot, token, usr, gym, day, callback);
 
       await sleep(10000);
       await browser.close();
