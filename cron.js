@@ -168,7 +168,7 @@ module.exports = ({
       const api = require("./api.js")({ apiUrl, token });
       const timeslots = await api.getTimeSlotsNew(gym.id);
       const timeslot = timeslots
-        .filter(({ activity }) => activity.name === workout.name)
+        .filter(({ activity }) => activity.name.toLowerCase().includes(workout.key))
         .filter(({ duration }) => dayjs(date.add(4, "day")).isSame(duration.start))
         .pop();
 
