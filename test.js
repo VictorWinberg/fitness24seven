@@ -9,7 +9,7 @@ require("./cron.js")({
   },
   notifyEnabled: false,
   testBook: {
-    date: "2024-04-20 10:30",
+    date: "2024-01-01 00:00",
     user: User.VW,
     workout: Workouts.find((workout) => workout.key === "bodypump"),
     gym: Gyms.find((gym) => gym.key === "värnhem"),

@@ -10,7 +10,8 @@ const { User } = require("./constants.js");
 let jobs = {};
 
 module.exports = ({
-  homeUrl = "https://se.fitness24seven.com/mina-sidor/oversikt/",
+  loginUrl = "https://se.fitness24seven.com/mina-sidor-v2/",
+  authUrl = "https://portal.fitness24seven.com/api/auth/session",
   apiUrl = "https://platform.fitness24seven.com/api/v2",
   notifyEnabled = true,
   notifyUrl = "https://home.codies.se/api/services/notify/",
@@ -114,16 +115,9 @@ module.exports = ({
 
       page.on("console", (msg) => console.log("\x1b[33mCONSOLE\x1b[0m", msg.text()));
 
-      // Homepage
-      await page.goto(homeUrl);
-      console.log(" --Homepage");
-
       // Go to login
-      await page.waitForSelector(".c-login .c-btn");
-      await page.evaluate(() => {
-        document.querySelector(".c-login .c-btn").click();
-      });
-      console.log(" --Login");
+      await page.goto(loginUrl, { waitUntil: "networkidle2" });
+      console.log(" --Login page");
 
       // Login
       await page.waitForSelector("#email");
@@ -137,20 +131,12 @@ module.exports = ({
         atob(process.env[usr + "_PASSWORD"] || "")
       );
 
-      await page.waitForFunction('window.localStorage.isLoggedin === "true"');
-      console.log(" --Logged in");
+      await page.waitForNavigation({ waitUntil: "networkidle2" });
 
-      const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
-      token = Object.keys(JSON.parse(storage))
-        .filter((key) => key.includes("accesstoken"))
-        .map((key) => JSON.parse(JSON.parse(storage)[key]).secret)
-        .pop();
-
-      // e.g. info.idTokenClaims.extension_PersonId
-      info = Object.values(JSON.parse(storage))
-        .filter((value) => value.includes("idTokenClaims"))
-        .map(JSON.parse)
-        .pop();
+      // Auth
+      const response = await page.goto(authUrl);
+      const json = await response.json();
+      const token = json.accessToken;
 
       if (!token) {
         console.error(" --No token found");
