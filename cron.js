@@ -147,7 +147,7 @@ module.exports = ({
 
       const delay = date.diff(dayjs());
       console.log(` --API Sleep ${delay}ms ` + new Date().toLocaleString());
-      await sleep(delay + 500);
+      await sleep(delay + 750);
       const now = `${new Date().toLocaleString()} ${new Date().getMilliseconds()}ms`;
       console.log(" --API Awake " + now);
 
