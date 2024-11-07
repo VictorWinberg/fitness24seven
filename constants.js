@@ -33,6 +33,12 @@ const Workouts = [
   { key: "hiit the zone" },
   { key: "hiit full body" },
   { key: "run interval" },
+  { key: "yoga" },
+  { key: "cycling beat" },
+  { key: "cycling hiit" },
+  { key: "cycling endurance" },
+  { key: "cycling interval" },
+  { key: "lesmills sprint" },
 ];
 
 module.exports = { User, Gyms, Workouts };
